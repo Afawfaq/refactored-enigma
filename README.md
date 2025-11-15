@@ -60,7 +60,7 @@ docker compose up -d
 
 **📖 See [UBUNTU-25.04-SETUP.md](UBUNTU-25.04-SETUP.md) for complete Ubuntu 25.04 guide including:**
 - ROCm 6.2+ installation for AMD GPUs
-- Proxmox GPU passthrough configuration
+- GPU support configuration
 - Kernel 6.14 optimization
 - Advanced troubleshooting
 
