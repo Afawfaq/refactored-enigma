@@ -60,6 +60,23 @@
       transform: scale(1.05);
       box-shadow: 0 0 20px #f0f;
     }
+    .advanced-link {
+      margin-top: 2em;
+      font-size: 0.9em;
+    }
+    .advanced-link a {
+      color: #0ff;
+      text-decoration: none;
+      border: 1px solid #0ff;
+      padding: 0.5em 1em;
+      border-radius: 5px;
+      transition: all 0.3s;
+      display: inline-block;
+    }
+    .advanced-link a:hover {
+      background: rgba(0, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
     .safety-info {
       font-size: 0.9em;
       color: #0ff;
@@ -84,6 +101,10 @@
     <form action="/start" method="post">
       <button type="submit">I Consent - Enter</button>
     </form>
+    
+    <div class="advanced-link">
+      <a href="/configure">⚙️ Advanced: Customize Persona & Kink Zones</a>
+    </div>
   </div>
   
   <div class="safety-info">

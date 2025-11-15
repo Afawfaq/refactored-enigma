@@ -10,6 +10,16 @@ import os
 import sys
 import logging
 
+# Import AI and persona modules
+try:
+    from ai_llm import OllamaClient
+    from personas import list_personas, list_kink_zones, list_models
+except ImportError:
+    OllamaClient = None
+    def list_personas(): return []
+    def list_kink_zones(): return []
+    def list_models(): return []
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -19,8 +29,9 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Get the consent HTML template
+# Get the HTML templates
 CONSENT_HTML_PATH = '/home/beta/hub/consent.html'
+CONFIGURE_HTML_PATH = '/home/beta/hub/configure.html'
 
 try:
     with open(CONSENT_HTML_PATH, 'r') as f:
@@ -29,11 +40,77 @@ except FileNotFoundError:
     logger.error(f"Consent HTML file not found at {CONSENT_HTML_PATH}")
     consent_template = "<h1>Error: Consent page not found</h1>"
 
+try:
+    with open(CONFIGURE_HTML_PATH, 'r') as f:
+        configure_template = f.read()
+except FileNotFoundError:
+    logger.warning(f"Configure HTML file not found at {CONFIGURE_HTML_PATH}")
+    configure_template = None
+
 
 @app.route('/')
 def index():
     """Serve the consent page."""
     return render_template_string(consent_template)
+
+
+@app.route('/configure')
+def configure():
+    """Serve the persona/kink configuration page."""
+    if configure_template:
+        return render_template_string(configure_template)
+    else:
+        return redirect('/start')
+
+
+@app.route('/configure', methods=['POST'])
+def configure_session():
+    """Handle configuration form submission and generate AI script."""
+    try:
+        # Get form data
+        persona = request.form.get('persona', 'gentle_guide')
+        kink_zones = request.form.get('kink_zone', 'relaxation').split(',')
+        model = request.form.get('model', 'dolphin-llama3:8b')
+        safety_level = int(request.form.get('safety_level', 3))
+        duration = int(request.form.get('duration', 20))
+        
+        logger.info(f"Generating script: persona={persona}, zones={kink_zones}, "
+                   f"model={model}, safety={safety_level}, duration={duration}")
+        
+        # Generate AI script if OllamaClient is available
+        if OllamaClient:
+            client = OllamaClient()
+            
+            # Generate script with first kink zone
+            kink_zone = kink_zones[0] if kink_zones else None
+            result = client.generate_script(
+                persona=persona,
+                duration=duration,
+                kink_zone=kink_zone,
+                model=model,
+                safety_level=safety_level
+            )
+            
+            if "error" in result:
+                logger.error(f"Script generation failed: {result['error']}")
+                return f"Error generating script: {result['error']}", 500
+            
+            logger.info(f"Script generated successfully: {result.get('timestamp', 'unknown')}")
+        else:
+            logger.warning("OllamaClient not available, skipping script generation")
+        
+        # Redirect to start session
+        return redirect('/start_configured')
+        
+    except Exception as e:
+        logger.error(f"Error in configure_session: {e}")
+        return f"Error: {e}", 500
+
+
+@app.route('/start_configured', methods=['GET', 'POST'])
+def start_configured():
+    """Start session after configuration."""
+    return start()
 
 
 @app.route('/start', methods=['POST'])
@@ -118,6 +195,24 @@ def stop():
     except Exception as e:
         logger.error(f"Error stopping session: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/personas')
+def api_personas():
+    """API endpoint to get available personas."""
+    return jsonify(list_personas())
+
+
+@app.route('/api/kink-zones')
+def api_kink_zones():
+    """API endpoint to get available kink zones."""
+    return jsonify(list_kink_zones())
+
+
+@app.route('/api/models')
+def api_models():
+    """API endpoint to get available AI models."""
+    return jsonify(list_models())
 
 
 if __name__ == '__main__':
