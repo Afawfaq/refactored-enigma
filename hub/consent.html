@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Consent Check - Hypno Hub</title>
+  <style>
+    body {
+      background: #000;
+      color: #f0f;
+      font-family: 'Courier New', monospace;
+      text-align: center;
+      margin-top: 10%;
+      padding: 2em;
+    }
+    h1 {
+      font-size: 3em;
+      margin-bottom: 0.5em;
+      text-shadow: 0 0 10px #f0f;
+    }
+    .consent-box {
+      max-width: 600px;
+      margin: 2em auto;
+      padding: 2em;
+      border: 2px solid #f0f;
+      border-radius: 10px;
+      background: rgba(255, 0, 255, 0.1);
+    }
+    p {
+      font-size: 1.2em;
+      line-height: 1.6;
+      margin: 1em 0;
+    }
+    .warning {
+      color: #ff0;
+      font-weight: bold;
+      margin: 1.5em 0;
+    }
+    kbd {
+      background: #333;
+      padding: 0.3em 0.6em;
+      border-radius: 3px;
+      border: 1px solid #f0f;
+      font-family: monospace;
+      font-size: 1.1em;
+    }
+    button {
+      font-size: 2em;
+      margin: 1em;
+      padding: 0.5em 2em;
+      background: #f0f;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    button:hover {
+      background: #ff0;
+      transform: scale(1.05);
+      box-shadow: 0 0 20px #f0f;
+    }
+    .safety-info {
+      font-size: 0.9em;
+      color: #0ff;
+      margin-top: 2em;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌀 Consensual Hypno Hub 🌀</h1>
+  
+  <div class="consent-box">
+    <p><strong>Before proceeding, please confirm that:</strong></p>
+    <ul style="text-align: left; display: inline-block;">
+      <li>✓ I am alone and in a safe, comfortable environment</li>
+      <li>✓ I am sober and of sound mind</li>
+      <li>✓ I consent to participate in this experience</li>
+      <li>✓ I understand I can stop at any time</li>
+    </ul>
+    
+    <p class="warning">⚠️ Emergency Exit: Press <kbd>Alt+Shift+E</kbd> to stop immediately</p>
+    
+    <form action="/start" method="post">
+      <button type="submit">I Consent - Enter</button>
+    </form>
+  </div>
+  
+  <div class="safety-info">
+    <p>This is a consensual experience designed for personal use.</p>
+    <p>Please ensure you are in a safe environment and able to stop at any time.</p>
+  </div>
+</body>
+</html>

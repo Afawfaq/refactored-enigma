@@ -1,0 +1,46 @@
+# Python
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+hub/logs/*.log
+
+# Media files (too large for git)
+hub/media/video/*
+hub/media/img/*
+hub/media/audio/*
+!hub/media/video/.gitkeep
+!hub/media/img/.gitkeep
+!hub/media/audio/.gitkeep
+
+# Generated scripts
+hub/scripts/*.txt
+hub/scripts/*.json
+!hub/scripts/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+*~
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.cache
+.lmstudio
