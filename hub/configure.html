@@ -1,0 +1,470 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Hypno Hub - Persona Selection</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #000 0%, #1a001a 100%);
+      color: #f0f;
+      font-family: 'Courier New', monospace;
+      padding: 2em;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      font-size: 2.5em;
+      text-align: center;
+      margin-bottom: 1em;
+      text-shadow: 0 0 20px #f0f;
+    }
+    
+    .warning-box {
+      background: rgba(255, 0, 255, 0.1);
+      border: 2px solid #f0f;
+      border-radius: 10px;
+      padding: 1.5em;
+      margin-bottom: 2em;
+      text-align: center;
+    }
+    
+    .warning-box h2 {
+      color: #ff0;
+      margin-bottom: 0.5em;
+    }
+    
+    .section {
+      background: rgba(255, 0, 255, 0.05);
+      border: 1px solid #f0f;
+      border-radius: 10px;
+      padding: 1.5em;
+      margin-bottom: 2em;
+    }
+    
+    .section h2 {
+      color: #0ff;
+      margin-bottom: 1em;
+      font-size: 1.5em;
+    }
+    
+    .persona-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1em;
+      margin-bottom: 1.5em;
+    }
+    
+    .persona-card {
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid #666;
+      border-radius: 8px;
+      padding: 1em;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .persona-card:hover {
+      border-color: #f0f;
+      transform: scale(1.02);
+      box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
+    }
+    
+    .persona-card.selected {
+      border-color: #0f0;
+      background: rgba(0, 255, 0, 0.1);
+    }
+    
+    .persona-card h3 {
+      color: #0ff;
+      margin-bottom: 0.5em;
+    }
+    
+    .persona-card p {
+      font-size: 0.9em;
+      margin-bottom: 0.5em;
+      color: #ccc;
+    }
+    
+    .safety-badge {
+      display: inline-block;
+      padding: 0.2em 0.8em;
+      border-radius: 12px;
+      font-size: 0.8em;
+      font-weight: bold;
+      margin-top: 0.5em;
+    }
+    
+    .safety-1 { background: #f00; color: #fff; }
+    .safety-2 { background: #ff6600; color: #fff; }
+    .safety-3 { background: #ffcc00; color: #000; }
+    .safety-4 { background: #66cc00; color: #000; }
+    .safety-5 { background: #00ff00; color: #000; }
+    
+    .kink-zones {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5em;
+    }
+    
+    .kink-tag {
+      background: rgba(0, 255, 255, 0.2);
+      border: 1px solid #0ff;
+      border-radius: 20px;
+      padding: 0.3em 1em;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 0.9em;
+    }
+    
+    .kink-tag:hover {
+      background: rgba(0, 255, 255, 0.4);
+      transform: scale(1.05);
+    }
+    
+    .kink-tag.selected {
+      background: rgba(255, 0, 255, 0.4);
+      border-color: #f0f;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5em;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5em;
+      color: #0ff;
+      font-weight: bold;
+    }
+    
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 0.8em;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid #f0f;
+      border-radius: 5px;
+      color: #0ff;
+      font-family: 'Courier New', monospace;
+      font-size: 1em;
+    }
+    
+    .model-info {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid #666;
+      border-radius: 5px;
+      padding: 0.8em;
+      margin-top: 0.5em;
+      font-size: 0.85em;
+      color: #999;
+    }
+    
+    .slider-container {
+      margin: 1em 0;
+    }
+    
+    .slider {
+      width: 100%;
+      height: 40px;
+      -webkit-appearance: none;
+      background: linear-gradient(to right, #f00 0%, #ff0 50%, #0f0 100%);
+      outline: none;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+    
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 30px;
+      height: 30px;
+      background: #fff;
+      border: 3px solid #f0f;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    
+    .slider::-moz-range-thumb {
+      width: 30px;
+      height: 30px;
+      background: #fff;
+      border: 3px solid #f0f;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    
+    .slider-label {
+      text-align: center;
+      margin-top: 0.5em;
+      font-weight: bold;
+    }
+    
+    .buttons {
+      display: flex;
+      gap: 1em;
+      justify-content: center;
+      margin-top: 2em;
+    }
+    
+    button {
+      font-size: 1.5em;
+      padding: 0.8em 2em;
+      background: linear-gradient(135deg, #f0f 0%, #00f 100%);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(255, 0, 255, 0.4);
+    }
+    
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 25px rgba(255, 0, 255, 0.6);
+    }
+    
+    button.secondary {
+      background: linear-gradient(135deg, #666 0%, #333 100%);
+    }
+    
+    .info-text {
+      color: #999;
+      font-size: 0.9em;
+      font-style: italic;
+      margin-top: 0.5em;
+    }
+    
+    a {
+      color: #0ff;
+      text-decoration: none;
+    }
+    
+    a:hover {
+      color: #f0f;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌀 Hypno Hub - Persona & Kink Zone Selection 🌀</h1>
+    
+    <div class="warning-box">
+      <h2>⚠️ Content Warning ⚠️</h2>
+      <p>This configuration allows access to uncensored AI models and adult-themed content.</p>
+      <p>By proceeding, you confirm you are 18+, consenting, and in a safe private environment.</p>
+      <p><strong>Emergency Exit:</strong> Alt+Shift+E stops everything immediately.</p>
+    </div>
+    
+    <form id="configForm" action="/configure" method="post">
+      <!-- Persona Selection -->
+      <div class="section">
+        <h2>1. Choose Your Persona</h2>
+        <p class="info-text">Select the AI personality that will guide your session</p>
+        
+        <div class="persona-grid" id="personaGrid">
+          <!-- Personas will be loaded dynamically or can be hardcoded -->
+          <div class="persona-card" data-persona="gentle_guide">
+            <h3>Gentle Guide</h3>
+            <p>Soft-spoken, reassuring, nurturing presence</p>
+            <span class="safety-badge safety-5">Safety: 5/5 (Max)</span>
+          </div>
+          
+          <div class="persona-card" data-persona="gentle_domme">
+            <h3>Gentle Domme</h3>
+            <p>Caring but authoritative, gentle dominance</p>
+            <span class="safety-badge safety-4">Safety: 4/5</span>
+          </div>
+          
+          <div class="persona-card" data-persona="strict_hypnotist">
+            <h3>Strict Hypnotist</h3>
+            <p>Commanding, direct, professional</p>
+            <span class="safety-badge safety-3">Safety: 3/5</span>
+          </div>
+          
+          <div class="persona-card" data-persona="sleep_specialist">
+            <h3>Sleep Specialist</h3>
+            <p>Deep relaxation and sleep induction</p>
+            <span class="safety-badge safety-5">Safety: 5/5 (Max)</span>
+          </div>
+          
+          <div class="persona-card" data-persona="fantasy_guide">
+            <h3>Fantasy Guide</h3>
+            <p>Immersive storyteller for fantasy scenarios</p>
+            <span class="safety-badge safety-3">Safety: 3/5</span>
+          </div>
+          
+          <div class="persona-card" data-persona="bimbo_coach">
+            <h3>Bimbofication Coach</h3>
+            <p>Transformation and mindlessness themes</p>
+            <span class="safety-badge safety-2">Safety: 2/5 (Adult)</span>
+          </div>
+        </div>
+        
+        <input type="hidden" name="persona" id="personaInput" value="gentle_guide" required>
+      </div>
+      
+      <!-- Kink Zone Selection -->
+      <div class="section">
+        <h2>2. Select Kink Zone(s)</h2>
+        <p class="info-text">Choose themes for your session (multiple allowed)</p>
+        
+        <div class="kink-zones">
+          <div class="kink-tag" data-zone="relaxation">🧘 Relaxation & Mindfulness</div>
+          <div class="kink-tag" data-zone="submission">⛓️ Submission & Obedience</div>
+          <div class="kink-tag" data-zone="transformation">🦋 Mental Transformation</div>
+          <div class="kink-tag" data-zone="triggers">⚡ Triggers & Conditioning</div>
+          <div class="kink-tag" data-zone="sensory">💫 Sensory Play</div>
+          <div class="kink-tag" data-zone="fantasy">🏰 Fantasy Scenarios</div>
+          <div class="kink-tag" data-zone="sleep">😴 Sleep & Dreams</div>
+          <div class="kink-tag" data-zone="confidence">💪 Self-Improvement</div>
+        </div>
+        
+        <input type="hidden" name="kink_zone" id="kinkZoneInput" value="relaxation">
+      </div>
+      
+      <!-- Model Selection -->
+      <div class="section">
+        <h2>3. Choose AI Model</h2>
+        <div class="form-group">
+          <label for="model">Model (Uncensored models for advanced use):</label>
+          <select name="model" id="model">
+            <option value="llama3.1:8b">llama3.1:8b (Safe, General Purpose)</option>
+            <option value="dolphin-llama3:8b" selected>dolphin-llama3:8b (Uncensored, Recommended)</option>
+            <option value="synthia:7b">synthia:7b (Uncensored, Fast)</option>
+            <option value="nous-hermes2:10.7b">nous-hermes2:10.7b (Uncensored, Detailed)</option>
+            <option value="wizard-vicuna-uncensored:13b">wizard-vicuna-uncensored:13b (Uncensored, Storytelling)</option>
+          </select>
+          <div class="model-info" id="modelInfo">
+            4.7GB VRAM • Fast • Creative roleplay, triggers, immersive scenarios
+          </div>
+        </div>
+      </div>
+      
+      <!-- Safety Guardrails -->
+      <div class="section">
+        <h2>4. Safety Guardrails</h2>
+        <div class="slider-container">
+          <label>Safety Level:</label>
+          <input type="range" min="1" max="5" value="3" class="slider" id="safetySlider" name="safety_level">
+          <div class="slider-label" id="safetyLabel">
+            3 - Medium Guardrails (Balanced)
+          </div>
+          <div class="model-info" id="safetyInfo">
+            ✓ Balanced safety settings. Kink-friendly with boundaries.
+          </div>
+        </div>
+      </div>
+      
+      <!-- Session Duration -->
+      <div class="section">
+        <h2>5. Session Duration</h2>
+        <div class="form-group">
+          <label for="duration">Duration (minutes):</label>
+          <input type="number" name="duration" id="duration" min="5" max="60" value="20" required>
+          <p class="info-text">Recommended: 15-30 minutes for first sessions</p>
+        </div>
+      </div>
+      
+      <!-- Action Buttons -->
+      <div class="buttons">
+        <button type="button" class="secondary" onclick="window.location.href='/'">← Back</button>
+        <button type="submit">Generate & Start Session →</button>
+      </div>
+    </form>
+  </div>
+  
+  <script>
+    // Model information database
+    const modelInfo = {
+      "llama3.1:8b": "4.7GB VRAM • Fast • General purpose, censored",
+      "dolphin-llama3:8b": "4.7GB VRAM • Fast • Creative roleplay, triggers, immersive scenarios",
+      "synthia:7b": "4.1GB VRAM • Fast • Direct, commanding tone; minimal fluff",
+      "nous-hermes2:10.7b": "6.3GB VRAM • Medium • Detailed, elaborate scripts",
+      "wizard-vicuna-uncensored:13b": "7.8GB VRAM • Medium • Long-form storytelling"
+    };
+    
+    // Safety level descriptions
+    const safetyLevels = {
+      1: { name: "Minimal Guardrails", desc: "⚠️ Advanced users only. No content filtering.", color: "#f00" },
+      2: { name: "Low Guardrails", desc: "⚠️ Adult content may be generated.", color: "#ff6600" },
+      3: { name: "Medium Guardrails", desc: "✓ Balanced safety settings. Kink-friendly with boundaries.", color: "#ffcc00" },
+      4: { name: "High Guardrails", desc: "✓ Strong safety features. Therapeutic focus.", color: "#66cc00" },
+      5: { name: "Maximum Guardrails", desc: "✓ Maximum safety - therapeutic use only.", color: "#00ff00" }
+    };
+    
+    // Persona selection
+    const personaCards = document.querySelectorAll('.persona-card');
+    const personaInput = document.getElementById('personaInput');
+    
+    personaCards.forEach(card => {
+      card.addEventListener('click', () => {
+        personaCards.forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        personaInput.value = card.dataset.persona;
+      });
+    });
+    
+    // Initialize first persona as selected
+    personaCards[0].classList.add('selected');
+    
+    // Kink zone selection (multi-select)
+    const kinkTags = document.querySelectorAll('.kink-tag');
+    const kinkZoneInput = document.getElementById('kinkZoneInput');
+    let selectedZones = ['relaxation'];
+    
+    kinkTags.forEach(tag => {
+      if (tag.dataset.zone === 'relaxation') {
+        tag.classList.add('selected');
+      }
+      
+      tag.addEventListener('click', () => {
+        tag.classList.toggle('selected');
+        const zone = tag.dataset.zone;
+        
+        if (selectedZones.includes(zone)) {
+          selectedZones = selectedZones.filter(z => z !== zone);
+        } else {
+          selectedZones.push(zone);
+        }
+        
+        kinkZoneInput.value = selectedZones.join(',');
+      });
+    });
+    
+    // Model selection info
+    const modelSelect = document.getElementById('model');
+    const modelInfoDiv = document.getElementById('modelInfo');
+    
+    modelSelect.addEventListener('change', () => {
+      modelInfoDiv.textContent = modelInfo[modelSelect.value];
+    });
+    
+    // Safety slider
+    const safetySlider = document.getElementById('safetySlider');
+    const safetyLabel = document.getElementById('safetyLabel');
+    const safetyInfo = document.getElementById('safetyInfo');
+    
+    safetySlider.addEventListener('input', () => {
+      const level = parseInt(safetySlider.value);
+      const info = safetyLevels[level];
+      safetyLabel.textContent = `${level} - ${info.name}`;
+      safetyLabel.style.color = info.color;
+      safetyInfo.textContent = info.desc;
+    });
+  </script>
+</body>
+</html>

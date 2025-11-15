@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  hypno-hub:
+    build: .
+    container_name: hypno-hub
+    hostname: hypno-hub
+    
+    volumes:
+      - ./hub:/home/beta/hub
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw  # X11 forwarding for Ubuntu 25.04
+    
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+      - HSA_OVERRIDE_GFX_VERSION=11.0.0  # AMD 7800 XT compatibility (gfx1101)
+      - ROCR_VISIBLE_DEVICES=0
+      - PATH=/usr/local/bin:/usr/bin:/bin
+      - GDK_BACKEND=x11  # Force X11 on Wayland sessions
+    
+    ports:
+      - "9999:9999"
+    
+    devices:
+      - /dev/dri:/dev/dri           # Direct Rendering Manager (GPU access)
+      - /dev/kfd:/dev/kfd           # Kernel Fusion Driver (ROCm/AMDGPU)
+    
+    # Use host network for easy Ollama TCP access
+    network_mode: "host"
+    
+    # Security enhancements
+    privileged: false               # Run without elevated privileges
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_ADMIN                  # Required for X11
+    
+    restart: unless-stopped
+    
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    
+    # Resource limits (adjust for your system)
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G

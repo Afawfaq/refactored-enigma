@@ -1,0 +1,34 @@
+# Ubuntu 25.04 specific cache directories
+.cache/ibus/
+.local/share/ibus/
+.config/ibus/
+.cache/thumbnails/
+.cache/gnome-software/
+.cache/mesa_shader_cache/
+
+# LLM model files
+.lmstudio/
+*.gguf
+models/
+
+# Git
+.git
+.gitignore
+
+# Python
+*.pyc
+__pycache__/
+
+# Logs
+*.log
+
+# System files
+*~
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+
+# Node modules (if any)
+node_modules/
