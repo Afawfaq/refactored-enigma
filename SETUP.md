@@ -100,7 +100,8 @@ docker compose up -d
 git clone https://github.com/Afawfaq/refactored-enigma.git
 cd refactored-enigma
 
-# Run automated setup (checks for Python 3, pip, git, Docker)
+# Run automated setup as Administrator (auto-installs Python 3, git using winget)
+# Right-click PowerShell and select "Run as Administrator", then run:
 powershell -ExecutionPolicy Bypass -File windows-setup.ps1
 
 # Start the service

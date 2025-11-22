@@ -109,7 +109,8 @@ docker compose up -d
 git clone https://github.com/Afawfaq/refactored-enigma.git
 cd refactored-enigma
 
-# Run automated setup (checks for Python 3, pip, git, Docker Desktop)
+# Run automated setup as Administrator (auto-installs Python 3, git using winget)
+# Right-click PowerShell and select "Run as Administrator", then run:
 powershell -ExecutionPolicy Bypass -File windows-setup.ps1
 
 # Start the service
@@ -118,11 +119,13 @@ docker compose -f docker-compose.windows.yml up -d
 # Access at http://localhost:9999
 ```
 
-**The setup script checks for and guides installation of:**
-- Python 3 and pip (provides download links if missing)
-- git (provides download link if missing)
-- Docker Desktop and Docker Compose
+**The setup script automatically installs (if missing and run as Administrator):**
+- Python 3 and pip (via winget)
+- git (via winget)
+- Checks for Docker Desktop and Docker Compose
 - Creates required directory structure
+
+**Note:** Run PowerShell as Administrator for automatic installation. Without admin rights, the script will provide manual installation guidance.
 
 **📖 See [WINDOWS-SETUP.md](WINDOWS-SETUP.md) for complete Windows guide including:**
 - Docker Desktop and WSL2 setup
