@@ -44,7 +44,7 @@ A privacy-first, containerized system for consensual immersive media experiences
 git clone https://github.com/Afawfaq/refactored-enigma.git
 cd refactored-enigma
 
-# Run the setup script
+# Run the setup script (auto-installs all dependencies)
 bash ubuntu-setup.sh
 
 # Log out and back in for group membership to take effect
@@ -53,6 +53,16 @@ docker compose up -d
 
 # Access at http://localhost:9999
 ```
+
+**The setup script automatically installs:**
+1. **Essential tools**: Python 3, pip, git, curl, wget (if not already present)
+2. **Docker**: docker.io and docker-compose-plugin from Ubuntu repositories
+3. **Media libraries**: mpv, feh, libmpv2, mesa-vulkan-drivers, vainfo
+4. **ROCm 6.2+**: Automatically installed if AMD GPU is detected
+5. **System tuning**: Kernel parameters optimized for media playback
+6. **Directory structure**: Creates hub/media, hub/scripts, hub/logs
+
+**All dependency checks are smart** - the script only installs what's missing, so it's safe to run multiple times.
 
 ### Manual Setup
 

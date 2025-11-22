@@ -105,10 +105,20 @@ git clone https://github.com/Afawfaq/refactored-enigma.git
 cd refactored-enigma
 ```
 
-2. Run the automated setup script:
+2. Run the automated setup script **as Administrator**:
 ```powershell
+# Right-click PowerShell and select "Run as Administrator", then run:
 powershell -ExecutionPolicy Bypass -File windows-setup.ps1
 ```
+
+**The setup script automatically installs (when run as Administrator):**
+- **Windows Package Manager (winget)** - Checked for availability
+- **Python 3 and pip** - Auto-installed via winget if missing
+- **git** - Auto-installed via winget if missing
+- **Docker Desktop and Docker Compose** - Checked (manual installation required if missing)
+- Creates directory structure and environment files
+
+**Note:** If not running as Administrator, the script will provide manual installation guidance with download links instead of auto-installing.
 
 3. Or manually set up:
 ```powershell

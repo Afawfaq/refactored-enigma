@@ -19,17 +19,71 @@ if ! grep -q "25.04" /etc/os-release; then
     fi
 fi
 
+# Install essential dependencies (Python, git, curl, wget)
+echo "[1/9] Checking and installing essential dependencies..."
+ESSENTIAL_PACKAGES=""
+
+# Check for Python 3
+if ! command -v python3 &> /dev/null; then
+    echo "  - Python 3 not found, will install"
+    ESSENTIAL_PACKAGES="$ESSENTIAL_PACKAGES python3"
+else
+    echo "  - Python 3 already installed: $(python3 --version)"
+fi
+
+# Check for pip3
+if ! command -v pip3 &> /dev/null; then
+    echo "  - pip3 not found, will install"
+    ESSENTIAL_PACKAGES="$ESSENTIAL_PACKAGES python3-pip"
+else
+    echo "  - pip3 already installed: $(pip3 --version)"
+fi
+
+# Check for git
+if ! command -v git &> /dev/null; then
+    echo "  - git not found, will install"
+    ESSENTIAL_PACKAGES="$ESSENTIAL_PACKAGES git"
+else
+    echo "  - git already installed: $(git --version)"
+fi
+
+# Check for curl
+if ! command -v curl &> /dev/null; then
+    echo "  - curl not found, will install"
+    ESSENTIAL_PACKAGES="$ESSENTIAL_PACKAGES curl"
+else
+    echo "  - curl already installed"
+fi
+
+# Check for wget
+if ! command -v wget &> /dev/null; then
+    echo "  - wget not found, will install"
+    ESSENTIAL_PACKAGES="$ESSENTIAL_PACKAGES wget"
+else
+    echo "  - wget already installed"
+fi
+
+# Install missing packages if any
+if [ -n "$ESSENTIAL_PACKAGES" ]; then
+    echo "  - Installing missing packages: $ESSENTIAL_PACKAGES"
+    sudo apt update
+    sudo apt install -y $ESSENTIAL_PACKAGES
+    echo "  - Essential dependencies installed successfully"
+else
+    echo "  - All essential dependencies already installed"
+fi
+
 # Install Docker (Ubuntu 25.04 native)
-echo "[1/8] Installing Docker from Ubuntu repositories..."
+echo "[2/9] Installing Docker from Ubuntu repositories..."
 sudo apt update
 sudo apt install -y docker.io docker-compose-plugin
 
 # Add user to docker group
-echo "[2/8] Adding $USER to docker group..."
+echo "[3/9] Adding $USER to docker group..."
 sudo usermod -aG docker $USER
 
 # Install media dependencies
-echo "[3/8] Installing media libraries..."
+echo "[4/9] Installing media libraries..."
 sudo apt install -y \
     mpv \
     feh \
@@ -40,7 +94,7 @@ sudo apt install -y \
 
 # Install ROCm (if AMD GPU detected)
 if lspci | grep -i amd | grep -qi vga; then
-    echo "[4/8] AMD GPU detected, installing ROCm 6.2+..."
+    echo "[5/9] AMD GPU detected, installing ROCm 6.2+..."
     
     # Add ROCm repository
     wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | sudo apt-key add -
@@ -53,11 +107,11 @@ if lspci | grep -i amd | grep -qi vga; then
     # Add user to render and video groups
     sudo usermod -aG render,video $USER
 else
-    echo "[4/8] No AMD GPU detected, skipping ROCm installation"
+    echo "[5/9] No AMD GPU detected, skipping ROCm installation"
 fi
 
 # Apply system tuning
-echo "[5/8] Applying kernel tuning..."
+echo "[6/9] Applying kernel tuning..."
 if [ -f config/sysctl-hypno-hub.conf ]; then
     sudo cp config/sysctl-hypno-hub.conf /etc/sysctl.d/99-hypno-hub.conf
     sudo sysctl --system
@@ -66,13 +120,13 @@ else
 fi
 
 # Create project directories
-echo "[6/8] Creating project directories..."
+echo "[7/9] Creating project directories..."
 mkdir -p hub/{media/{video,img,audio},scripts,logs}
 touch hub/media/{video,img,audio}/.gitkeep
 touch hub/{scripts,logs}/.gitkeep
 
 # Set up environment file
-echo "[7/8] Creating environment configuration..."
+echo "[8/9] Creating environment configuration..."
 if [ ! -f .env ]; then
     cp .env.example .env
     echo "Created .env file - please review and customize"
@@ -81,7 +135,7 @@ else
 fi
 
 # Build Docker image
-echo "[8/8] Building Docker image..."
+echo "[9/9] Building Docker image..."
 docker compose build
 
 echo ""

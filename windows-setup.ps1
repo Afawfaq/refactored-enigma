@@ -9,15 +9,115 @@ $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIde
 
 if (-not $isAdmin) {
     Write-Host "Warning: Not running as Administrator" -ForegroundColor Yellow
-    Write-Host "Some steps may require administrator privileges" -ForegroundColor Yellow
+    Write-Host "Administrator privileges are required to install missing dependencies" -ForegroundColor Yellow
+    Write-Host "Please run this script as Administrator by right-clicking PowerShell and selecting 'Run as Administrator'" -ForegroundColor Yellow
     $continue = Read-Host "Continue anyway? (y/N)"
     if ($continue -notmatch '^[Yy]$') {
         exit 1
     }
 }
 
+# Check for winget (Windows Package Manager)
+Write-Host "[1/9] Checking for Windows Package Manager (winget)..." -ForegroundColor Green
+$wingetAvailable = $false
+try {
+    $wingetVersion = winget --version 2>&1
+    Write-Host "winget found: $wingetVersion" -ForegroundColor Gray
+    $wingetAvailable = $true
+} catch {
+    Write-Host "winget not found!" -ForegroundColor Yellow
+    Write-Host "Windows Package Manager is recommended for automatic installation." -ForegroundColor Yellow
+    Write-Host "You can install it from the Microsoft Store: 'App Installer'" -ForegroundColor Yellow
+    Write-Host "Continuing with manual installation prompts..." -ForegroundColor Yellow
+}
+
+# Check and install Python 3
+Write-Host "[2/9] Checking for Python 3..." -ForegroundColor Green
+$pythonInstalled = $false
+try {
+    $pythonVersion = python --version 2>&1
+    if ($pythonVersion -match "Python 3") {
+        Write-Host "Python found: $pythonVersion" -ForegroundColor Gray
+        $pythonInstalled = $true
+    } else {
+        throw "Python 3 not found"
+    }
+} catch {
+    Write-Host "Python 3 not found!" -ForegroundColor Yellow
+    
+    if ($wingetAvailable -and $isAdmin) {
+        Write-Host "Attempting to install Python 3 using winget..." -ForegroundColor Cyan
+        try {
+            # Install latest Python 3.x (3.12 is stable and widely used as of 2024)
+            # Using 3.12 specifically ensures compatibility with the project requirements
+            winget install --id Python.Python.3.12 --silent --accept-package-agreements --accept-source-agreements
+            Write-Host "Python 3 installed successfully!" -ForegroundColor Green
+            Write-Host "Note: You may need to restart PowerShell for PATH changes to take effect" -ForegroundColor Yellow
+            $pythonInstalled = $true
+        } catch {
+            Write-Host "Failed to install Python automatically" -ForegroundColor Red
+        }
+    }
+    
+    if (-not $pythonInstalled) {
+        Write-Host "To install Python 3 manually:" -ForegroundColor Cyan
+        Write-Host "1. Download from: https://www.python.org/downloads/" -ForegroundColor White
+        Write-Host "2. Run the installer and CHECK 'Add Python to PATH'" -ForegroundColor White
+        Write-Host "3. After installation, restart PowerShell and run this script again" -ForegroundColor White
+        Write-Host "" -ForegroundColor Yellow
+        $continue = Read-Host "Continue without Python? (y/N)"
+        if ($continue -notmatch '^[Yy]$') {
+            Write-Host "Exiting. Please install Python and run this script again." -ForegroundColor Yellow
+            exit 1
+        }
+        Write-Host "Continuing without Python - some features may not work" -ForegroundColor Yellow
+    }
+}
+
+# Check for pip (comes with Python)
+Write-Host "[3/9] Checking for pip..." -ForegroundColor Green
+try {
+    $pipVersion = pip --version 2>&1
+    Write-Host "pip found: $pipVersion" -ForegroundColor Gray
+} catch {
+    Write-Host "pip not found" -ForegroundColor Yellow
+    # pip comes with modern Python installations by default
+    # If Python was just installed, user may need to restart PowerShell for PATH updates
+    Write-Host "pip should come with Python installation. If Python was just installed, restart PowerShell." -ForegroundColor Yellow
+    Write-Host "Otherwise, you may need to reinstall Python with pip enabled" -ForegroundColor Yellow
+}
+
+# Check and install git
+Write-Host "[4/9] Checking for git..." -ForegroundColor Green
+$gitInstalled = $false
+try {
+    $gitVersion = git --version 2>&1
+    Write-Host "git found: $gitVersion" -ForegroundColor Gray
+    $gitInstalled = $true
+} catch {
+    Write-Host "git not found!" -ForegroundColor Yellow
+    
+    if ($wingetAvailable -and $isAdmin) {
+        Write-Host "Attempting to install git using winget..." -ForegroundColor Cyan
+        try {
+            winget install --id Git.Git --silent --accept-package-agreements --accept-source-agreements
+            Write-Host "git installed successfully!" -ForegroundColor Green
+            Write-Host "Note: You may need to restart PowerShell for PATH changes to take effect" -ForegroundColor Yellow
+            $gitInstalled = $true
+        } catch {
+            Write-Host "Failed to install git automatically" -ForegroundColor Red
+        }
+    }
+    
+    if (-not $gitInstalled) {
+        Write-Host "To install git manually:" -ForegroundColor Cyan
+        Write-Host "Download from: https://git-scm.com/download/win" -ForegroundColor White
+        Write-Host "Continuing without git..." -ForegroundColor Yellow
+    }
+}
+
 # Check for Docker Desktop
-Write-Host "[1/6] Checking for Docker Desktop..." -ForegroundColor Green
+Write-Host "[5/9] Checking for Docker Desktop..." -ForegroundColor Green
 try {
     $dockerVersion = docker --version
     Write-Host "Docker found: $dockerVersion" -ForegroundColor Gray
@@ -29,7 +129,7 @@ try {
 }
 
 # Check Docker Compose
-Write-Host "[2/6] Checking for Docker Compose..." -ForegroundColor Green
+Write-Host "[6/9] Checking for Docker Compose..." -ForegroundColor Green
 try {
     $composeVersion = docker compose version
     Write-Host "Docker Compose found: $composeVersion" -ForegroundColor Gray
@@ -41,7 +141,7 @@ try {
 }
 
 # Create project directories
-Write-Host "[3/6] Creating project directories..." -ForegroundColor Green
+Write-Host "[7/9] Creating project directories..." -ForegroundColor Green
 $directories = @(
     "hub\media\video",
     "hub\media\img",
@@ -60,7 +160,7 @@ foreach ($dir in $directories) {
 Write-Host "Directories created successfully" -ForegroundColor Gray
 
 # Set up environment file
-Write-Host "[4/6] Creating environment configuration..." -ForegroundColor Green
+Write-Host "[8/9] Creating environment configuration..." -ForegroundColor Green
 if (-not (Test-Path ".env")) {
     Copy-Item ".env.example" ".env"
     Write-Host "Created .env file - please review and customize" -ForegroundColor Gray
@@ -69,7 +169,6 @@ if (-not (Test-Path ".env")) {
 }
 
 # Update .env for Windows
-Write-Host "[5/6] Updating .env for Windows..." -ForegroundColor Green
 if (Test-Path ".env") {
     $envContent = Get-Content ".env" -Raw
     # Use host.docker.internal for Ollama on Windows
@@ -82,7 +181,7 @@ if (Test-Path ".env") {
 }
 
 # Build Docker image
-Write-Host "[6/6] Building Docker image..." -ForegroundColor Green
+Write-Host "[9/9] Building Docker image..." -ForegroundColor Green
 docker compose -f docker-compose.windows.yml build
 
 if ($LASTEXITCODE -eq 0) {

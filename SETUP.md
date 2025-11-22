@@ -65,6 +65,7 @@ The HTML consent page requires explicit user action before any media loads. It d
 - Docker 20.10+ and Docker Compose 2.0+
 - Linux system (tested on Debian 12, Ubuntu 22.04) or Windows 10/11 with WSL2
 - 4GB+ RAM, 10GB+ disk space
+- Python 3 and pip (automatically installed by setup scripts)
 
 **Optional (for GPU acceleration):**
 - AMD GPU with ROCm support or NVIDIA GPU with CUDA
@@ -78,7 +79,36 @@ The HTML consent page requires explicit user action before any media loads. It d
 - See [WINDOWS-SETUP.md](WINDOWS-SETUP.md) for detailed Windows installation instructions
 - Docker Desktop for Windows with WSL2 backend recommended
 
-### Quick Install
+### Automated Setup (Recommended)
+
+**For Ubuntu 25.04:**
+```bash
+# Clone the repository
+git clone https://github.com/Afawfaq/refactored-enigma.git
+cd refactored-enigma
+
+# Run automated setup (auto-installs Python 3, pip, git, Docker, and more)
+bash ubuntu-setup.sh
+
+# Log out and back in for group membership, then start the service
+docker compose up -d
+```
+
+**For Windows:**
+```powershell
+# Clone the repository
+git clone https://github.com/Afawfaq/refactored-enigma.git
+cd refactored-enigma
+
+# Run automated setup as Administrator (auto-installs Python 3, git using winget)
+# Right-click PowerShell and select "Run as Administrator", then run:
+powershell -ExecutionPolicy Bypass -File windows-setup.ps1
+
+# Start the service
+docker compose -f docker-compose.windows.yml up -d
+```
+
+### Manual Install
 
 ```bash
 # 1. Clone the repository
