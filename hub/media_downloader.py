@@ -105,7 +105,12 @@ class MediaDownloader:
                     return json.load(f)
             except Exception as e:
                 logger.warning(f"Failed to load metadata: {e}")
-        return {}
+        return {
+            "files": {},  # filename -> {tags, category, playlists, etc}
+            "playlists": {},  # playlist_id -> {name, description, files, created, modified}
+            "categories": [],  # list of category names
+            "tags": []  # list of tag names
+        }
     
     def _save_metadata(self):
         """Save metadata to file."""
@@ -764,6 +769,273 @@ class MediaDownloader:
         
         logger.info(f"Removed {removed} duplicate files")
         return removed
+    
+    # ===== Media Organization Methods =====
+    
+    def add_category(self, category: str) -> bool:
+        """Add a new category."""
+        if "categories" not in self.metadata:
+            self.metadata["categories"] = []
+        if category not in self.metadata["categories"]:
+            self.metadata["categories"].append(category)
+            self._save_metadata()
+            logger.info(f"Added category: {category}")
+            return True
+        return False
+    
+    def remove_category(self, category: str) -> bool:
+        """Remove a category."""
+        if "categories" not in self.metadata:
+            self.metadata["categories"] = []
+        if category in self.metadata["categories"]:
+            self.metadata["categories"].remove(category)
+            # Remove category from all files
+            if "files" in self.metadata:
+                for file_meta in self.metadata["files"].values():
+                    if file_meta.get("category") == category:
+                        file_meta["category"] = None
+            self._save_metadata()
+            logger.info(f"Removed category: {category}")
+            return True
+        return False
+    
+    def get_categories(self) -> List[str]:
+        """Get list of all categories."""
+        if "categories" not in self.metadata:
+            self.metadata["categories"] = []
+        return sorted(self.metadata["categories"])
+    
+    def add_tag(self, tag: str) -> bool:
+        """Add a new tag."""
+        if "tags" not in self.metadata:
+            self.metadata["tags"] = []
+        if tag not in self.metadata["tags"]:
+            self.metadata["tags"].append(tag)
+            self._save_metadata()
+            logger.info(f"Added tag: {tag}")
+            return True
+        return False
+    
+    def remove_tag(self, tag: str) -> bool:
+        """Remove a tag."""
+        if "tags" not in self.metadata:
+            self.metadata["tags"] = []
+        if tag in self.metadata["tags"]:
+            self.metadata["tags"].remove(tag)
+            # Remove tag from all files
+            if "files" in self.metadata:
+                for file_meta in self.metadata["files"].values():
+                    if "tags" in file_meta and tag in file_meta["tags"]:
+                        file_meta["tags"].remove(tag)
+            self._save_metadata()
+            logger.info(f"Removed tag: {tag}")
+            return True
+        return False
+    
+    def get_tags(self) -> List[str]:
+        """Get list of all tags."""
+        if "tags" not in self.metadata:
+            self.metadata["tags"] = []
+        return sorted(self.metadata["tags"])
+    
+    def set_file_category(self, filename: str, category: str) -> bool:
+        """Set category for a file."""
+        if "files" not in self.metadata:
+            self.metadata["files"] = {}
+        if filename not in self.metadata["files"]:
+            self.metadata["files"][filename] = {}
+        
+        # Add category to list if not exists
+        if category and category not in self.get_categories():
+            self.add_category(category)
+        
+        self.metadata["files"][filename]["category"] = category
+        self._save_metadata()
+        logger.info(f"Set category '{category}' for file: {filename}")
+        return True
+    
+    def add_file_tag(self, filename: str, tag: str) -> bool:
+        """Add a tag to a file."""
+        if "files" not in self.metadata:
+            self.metadata["files"] = {}
+        if filename not in self.metadata["files"]:
+            self.metadata["files"][filename] = {"tags": []}
+        if "tags" not in self.metadata["files"][filename]:
+            self.metadata["files"][filename]["tags"] = []
+        
+        # Add tag to list if not exists
+        if tag not in self.get_tags():
+            self.add_tag(tag)
+        
+        if tag not in self.metadata["files"][filename]["tags"]:
+            self.metadata["files"][filename]["tags"].append(tag)
+            self._save_metadata()
+            logger.info(f"Added tag '{tag}' to file: {filename}")
+            return True
+        return False
+    
+    def remove_file_tag(self, filename: str, tag: str) -> bool:
+        """Remove a tag from a file."""
+        if "files" not in self.metadata:
+            return False
+        if filename not in self.metadata["files"]:
+            return False
+        if "tags" not in self.metadata["files"][filename]:
+            return False
+        
+        if tag in self.metadata["files"][filename]["tags"]:
+            self.metadata["files"][filename]["tags"].remove(tag)
+            self._save_metadata()
+            logger.info(f"Removed tag '{tag}' from file: {filename}")
+            return True
+        return False
+    
+    def get_file_metadata(self, filename: str) -> Dict:
+        """Get metadata for a file."""
+        if "files" not in self.metadata:
+            self.metadata["files"] = {}
+        return self.metadata["files"].get(filename, {})
+    
+    def create_playlist(self, name: str, description: str = "") -> str:
+        """Create a new playlist."""
+        if "playlists" not in self.metadata:
+            self.metadata["playlists"] = {}
+        
+        # Generate unique ID
+        playlist_id = f"playlist_{int(time.time())}_{len(self.metadata['playlists'])}"
+        
+        self.metadata["playlists"][playlist_id] = {
+            "id": playlist_id,
+            "name": name,
+            "description": description,
+            "files": [],
+            "created": datetime.now().isoformat(),
+            "modified": datetime.now().isoformat()
+        }
+        self._save_metadata()
+        logger.info(f"Created playlist: {name} (ID: {playlist_id})")
+        return playlist_id
+    
+    def delete_playlist(self, playlist_id: str) -> bool:
+        """Delete a playlist."""
+        if "playlists" not in self.metadata:
+            return False
+        if playlist_id in self.metadata["playlists"]:
+            del self.metadata["playlists"][playlist_id]
+            self._save_metadata()
+            logger.info(f"Deleted playlist: {playlist_id}")
+            return True
+        return False
+    
+    def update_playlist(self, playlist_id: str, name: str = None, description: str = None) -> bool:
+        """Update playlist name or description."""
+        if "playlists" not in self.metadata:
+            return False
+        if playlist_id not in self.metadata["playlists"]:
+            return False
+        
+        if name:
+            self.metadata["playlists"][playlist_id]["name"] = name
+        if description is not None:
+            self.metadata["playlists"][playlist_id]["description"] = description
+        self.metadata["playlists"][playlist_id]["modified"] = datetime.now().isoformat()
+        self._save_metadata()
+        logger.info(f"Updated playlist: {playlist_id}")
+        return True
+    
+    def add_to_playlist(self, playlist_id: str, filename: str) -> bool:
+        """Add a file to a playlist."""
+        if "playlists" not in self.metadata:
+            return False
+        if playlist_id not in self.metadata["playlists"]:
+            return False
+        
+        if filename not in self.metadata["playlists"][playlist_id]["files"]:
+            self.metadata["playlists"][playlist_id]["files"].append(filename)
+            self.metadata["playlists"][playlist_id]["modified"] = datetime.now().isoformat()
+            self._save_metadata()
+            logger.info(f"Added {filename} to playlist {playlist_id}")
+            return True
+        return False
+    
+    def remove_from_playlist(self, playlist_id: str, filename: str) -> bool:
+        """Remove a file from a playlist."""
+        if "playlists" not in self.metadata:
+            return False
+        if playlist_id not in self.metadata["playlists"]:
+            return False
+        
+        if filename in self.metadata["playlists"][playlist_id]["files"]:
+            self.metadata["playlists"][playlist_id]["files"].remove(filename)
+            self.metadata["playlists"][playlist_id]["modified"] = datetime.now().isoformat()
+            self._save_metadata()
+            logger.info(f"Removed {filename} from playlist {playlist_id}")
+            return True
+        return False
+    
+    def get_playlists(self) -> List[Dict]:
+        """Get all playlists."""
+        if "playlists" not in self.metadata:
+            self.metadata["playlists"] = {}
+        return list(self.metadata["playlists"].values())
+    
+    def get_playlist(self, playlist_id: str) -> Optional[Dict]:
+        """Get a specific playlist."""
+        if "playlists" not in self.metadata:
+            return None
+        return self.metadata["playlists"].get(playlist_id)
+    
+    def get_files_by_category(self, category: str) -> List[str]:
+        """Get all files in a category."""
+        if "files" not in self.metadata:
+            return []
+        return [filename for filename, meta in self.metadata["files"].items() 
+                if meta.get("category") == category]
+    
+    def get_files_by_tag(self, tag: str) -> List[str]:
+        """Get all files with a specific tag."""
+        if "files" not in self.metadata:
+            return []
+        return [filename for filename, meta in self.metadata["files"].items() 
+                if "tags" in meta and tag in meta["tags"]]
+    
+    def search_files(self, query: str = None, category: str = None, tags: List[str] = None) -> List[Dict]:
+        """
+        Search files by name, category, or tags.
+        
+        Args:
+            query: Search query for filename
+            category: Filter by category
+            tags: Filter by tags (file must have all tags)
+            
+        Returns:
+            List of file information dictionaries
+        """
+        files = self.list_media_files(include_info=True)
+        results = []
+        
+        for file_info in files:
+            filename = file_info["filename"]
+            file_meta = self.get_file_metadata(filename)
+            
+            # Apply filters
+            if query and query.lower() not in filename.lower():
+                continue
+            
+            if category and file_meta.get("category") != category:
+                continue
+            
+            if tags:
+                file_tags = file_meta.get("tags", [])
+                if not all(tag in file_tags for tag in tags):
+                    continue
+            
+            # Add metadata to file info
+            file_info["category"] = file_meta.get("category")
+            file_info["tags"] = file_meta.get("tags", [])
+            results.append(file_info)
+        
+        return results
 
 
 def main():

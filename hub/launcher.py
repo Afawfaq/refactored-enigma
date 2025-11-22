@@ -720,6 +720,267 @@ def api_media_clear():
         return jsonify({'error': str(e)}), 500
 
 
+# ===== Media Organization API Endpoints =====
+
+@app.route('/api/media/categories', methods=['GET', 'POST', 'DELETE'])
+def api_media_categories():
+    """Manage categories."""
+    if not MediaDownloader:
+        return jsonify({'error': 'MediaDownloader not available'}), 503
+    
+    try:
+        downloader = MediaDownloader()
+        
+        if request.method == 'GET':
+            return jsonify({
+                'status': 'success',
+                'categories': downloader.get_categories()
+            })
+        
+        elif request.method == 'POST':
+            data = request.get_json()
+            category = data.get('category', '').strip()
+            if not category:
+                return jsonify({'error': 'Category name required'}), 400
+            success = downloader.add_category(category)
+            return jsonify({
+                'status': 'success' if success else 'exists',
+                'category': category
+            })
+        
+        elif request.method == 'DELETE':
+            data = request.get_json()
+            category = data.get('category', '').strip()
+            if not category:
+                return jsonify({'error': 'Category name required'}), 400
+            success = downloader.remove_category(category)
+            return jsonify({
+                'status': 'success' if success else 'not_found'
+            })
+    
+    except Exception as e:
+        logger.error(f"Error managing categories: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/media/tags', methods=['GET', 'POST', 'DELETE'])
+def api_media_tags():
+    """Manage tags."""
+    if not MediaDownloader:
+        return jsonify({'error': 'MediaDownloader not available'}), 503
+    
+    try:
+        downloader = MediaDownloader()
+        
+        if request.method == 'GET':
+            return jsonify({
+                'status': 'success',
+                'tags': downloader.get_tags()
+            })
+        
+        elif request.method == 'POST':
+            data = request.get_json()
+            tag = data.get('tag', '').strip()
+            if not tag:
+                return jsonify({'error': 'Tag name required'}), 400
+            success = downloader.add_tag(tag)
+            return jsonify({
+                'status': 'success' if success else 'exists',
+                'tag': tag
+            })
+        
+        elif request.method == 'DELETE':
+            data = request.get_json()
+            tag = data.get('tag', '').strip()
+            if not tag:
+                return jsonify({'error': 'Tag name required'}), 400
+            success = downloader.remove_tag(tag)
+            return jsonify({
+                'status': 'success' if success else 'not_found'
+            })
+    
+    except Exception as e:
+        logger.error(f"Error managing tags: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/media/files/<path:filename>/organize', methods=['POST'])
+def api_media_organize_file(filename):
+    """Organize a file with category and tags."""
+    if not MediaDownloader:
+        return jsonify({'error': 'MediaDownloader not available'}), 503
+    
+    try:
+        data = request.get_json()
+        downloader = MediaDownloader()
+        
+        # Set category
+        if 'category' in data:
+            category = data['category']
+            downloader.set_file_category(filename, category)
+        
+        # Add tags
+        if 'add_tags' in data:
+            for tag in data['add_tags']:
+                downloader.add_file_tag(filename, tag)
+        
+        # Remove tags
+        if 'remove_tags' in data:
+            for tag in data['remove_tags']:
+                downloader.remove_file_tag(filename, tag)
+        
+        return jsonify({
+            'status': 'success',
+            'metadata': downloader.get_file_metadata(filename)
+        })
+    
+    except Exception as e:
+        logger.error(f"Error organizing file: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/media/playlists', methods=['GET', 'POST'])
+def api_media_playlists():
+    """List or create playlists."""
+    if not MediaDownloader:
+        return jsonify({'error': 'MediaDownloader not available'}), 503
+    
+    try:
+        downloader = MediaDownloader()
+        
+        if request.method == 'GET':
+            return jsonify({
+                'status': 'success',
+                'playlists': downloader.get_playlists()
+            })
+        
+        elif request.method == 'POST':
+            data = request.get_json()
+            name = data.get('name', '').strip()
+            description = data.get('description', '').strip()
+            
+            if not name:
+                return jsonify({'error': 'Playlist name required'}), 400
+            
+            playlist_id = downloader.create_playlist(name, description)
+            return jsonify({
+                'status': 'success',
+                'playlist_id': playlist_id,
+                'playlist': downloader.get_playlist(playlist_id)
+            })
+    
+    except Exception as e:
+        logger.error(f"Error managing playlists: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/media/playlists/<playlist_id>', methods=['GET', 'PUT', 'DELETE'])
+def api_media_playlist(playlist_id):
+    """Get, update, or delete a playlist."""
+    if not MediaDownloader:
+        return jsonify({'error': 'MediaDownloader not available'}), 503
+    
+    try:
+        downloader = MediaDownloader()
+        
+        if request.method == 'GET':
+            playlist = downloader.get_playlist(playlist_id)
+            if not playlist:
+                return jsonify({'error': 'Playlist not found'}), 404
+            return jsonify({
+                'status': 'success',
+                'playlist': playlist
+            })
+        
+        elif request.method == 'PUT':
+            data = request.get_json()
+            name = data.get('name')
+            description = data.get('description')
+            success = downloader.update_playlist(playlist_id, name, description)
+            if not success:
+                return jsonify({'error': 'Playlist not found'}), 404
+            return jsonify({
+                'status': 'success',
+                'playlist': downloader.get_playlist(playlist_id)
+            })
+        
+        elif request.method == 'DELETE':
+            success = downloader.delete_playlist(playlist_id)
+            if not success:
+                return jsonify({'error': 'Playlist not found'}), 404
+            return jsonify({'status': 'success'})
+    
+    except Exception as e:
+        logger.error(f"Error with playlist: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/media/playlists/<playlist_id>/files', methods=['POST', 'DELETE'])
+def api_media_playlist_files(playlist_id):
+    """Add or remove files from playlist."""
+    if not MediaDownloader:
+        return jsonify({'error': 'MediaDownloader not available'}), 503
+    
+    try:
+        data = request.get_json()
+        filename = data.get('filename', '').strip()
+        if not filename:
+            return jsonify({'error': 'Filename required'}), 400
+        
+        downloader = MediaDownloader()
+        
+        if request.method == 'POST':
+            success = downloader.add_to_playlist(playlist_id, filename)
+            if not success:
+                return jsonify({'error': 'Playlist not found or file already in playlist'}), 400
+            return jsonify({
+                'status': 'success',
+                'playlist': downloader.get_playlist(playlist_id)
+            })
+        
+        elif request.method == 'DELETE':
+            success = downloader.remove_from_playlist(playlist_id, filename)
+            if not success:
+                return jsonify({'error': 'Playlist not found or file not in playlist'}), 400
+            return jsonify({
+                'status': 'success',
+                'playlist': downloader.get_playlist(playlist_id)
+            })
+    
+    except Exception as e:
+        logger.error(f"Error managing playlist files: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/media/search')
+def api_media_search():
+    """Search files by name, category, or tags."""
+    if not MediaDownloader:
+        return jsonify({'error': 'MediaDownloader not available'}), 503
+    
+    try:
+        query = request.args.get('query', '')
+        category = request.args.get('category', '')
+        tags = request.args.getlist('tags')
+        
+        downloader = MediaDownloader()
+        results = downloader.search_files(
+            query=query if query else None,
+            category=category if category else None,
+            tags=tags if tags else None
+        )
+        
+        return jsonify({
+            'status': 'success',
+            'results': results,
+            'count': len(results)
+        })
+    
+    except Exception as e:
+        logger.error(f"Error searching media: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     logger.info("Starting Hypno Hub on port 9999")
     logger.info(f"Ollama host: {os.getenv('OLLAMA_HOST', 'http://host.docker.internal:11434')}")
