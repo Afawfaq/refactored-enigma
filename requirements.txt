@@ -6,9 +6,8 @@ flask>=3.0.0
 requests>=2.31.0
 
 # PyTorch for potential future ML features
-# Note: torch, torchvision, torchaudio are large packages
-# Install separately if needed: pip install torch torchvision torchaudio
-# Uncomment below if you need them:
-# torch>=2.1.0
-# torchvision>=0.16.0
-# torchaudio>=2.1.0
+# Currently optional - the Dockerfile installs these in the container
+# Uncomment to install locally for development:
+# torch>=2.1.0      # Deep learning framework (large package ~800MB)
+# torchvision>=0.16.0  # Computer vision utilities
+# torchaudio>=2.1.0    # Audio processing utilities

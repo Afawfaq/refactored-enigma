@@ -13,14 +13,13 @@ import tempfile
 import shutil
 
 # Mock the template files before importing launcher
+from unittest.mock import mock_open
+
 consent_html = "<html><body>Consent Page</body></html>"
 configure_html = "<html><body>Configure Page</body></html>"
 
-with patch('builtins.open', create=True) as mock_open:
-    mock_open.return_value.__enter__ = lambda self: self
-    mock_open.return_value.__exit__ = Mock()
-    mock_open.return_value.read = Mock(side_effect=[consent_html, configure_html])
-    
+# Use mock_open for cleaner file mocking
+with patch('builtins.open', mock_open(read_data=consent_html)):
     from hub.launcher import app
 
 

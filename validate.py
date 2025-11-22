@@ -96,7 +96,8 @@ def check_docker_compose():
             ["docker", "compose", "config"],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=10,
+            check=False
         )
         if result.returncode == 0:
             print_status("Docker Compose configuration is valid", "success")
