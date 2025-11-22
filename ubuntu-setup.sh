@@ -36,7 +36,7 @@ if ! command -v pip3 &> /dev/null; then
     echo "  - pip3 not found, will install"
     ESSENTIAL_PACKAGES="$ESSENTIAL_PACKAGES python3-pip"
 else
-    echo "  - pip3 already installed: $(pip3 --version | head -n1)"
+    echo "  - pip3 already installed: $(pip3 --version)"
 fi
 
 # Check for git
