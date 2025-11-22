@@ -49,6 +49,35 @@ def add_security_headers(response):
     # Note: Not adding CSP as it might interfere with inline scripts
     return response
 
+# Error handlers
+@app.errorhandler(404)
+def not_found(error):
+    """Handle 404 errors."""
+    return jsonify({
+        'error': 'Not Found',
+        'message': 'The requested resource was not found',
+        'status': 404
+    }), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle 500 errors."""
+    logger.error(f"Internal server error: {error}", exc_info=True)
+    return jsonify({
+        'error': 'Internal Server Error',
+        'message': 'An unexpected error occurred',
+        'status': 500
+    }), 500
+
+@app.errorhandler(429)
+def rate_limit_error(error):
+    """Handle 429 rate limit errors."""
+    return jsonify({
+        'error': 'Too Many Requests',
+        'message': 'Rate limit exceeded. Please try again later.',
+        'status': 429
+    }), 429
+
 # Rate limiting state (simple in-memory)
 _rate_limit_cache = {}
 
@@ -253,7 +282,7 @@ def start():
 
 @app.route('/session')
 def session():
-    """Display session active page."""
+    """Display session active page with status monitoring."""
     return """
     <!doctype html>
     <html>
@@ -265,24 +294,75 @@ def session():
                 color: #0f0;
                 font-family: monospace;
                 text-align: center;
-                margin-top: 20%;
+                margin-top: 10%;
+                padding: 2em;
             }
-            h1 { font-size: 2em; }
-            .info { margin: 2em; color: #0ff; }
+            h1 { 
+                font-size: 2.5em; 
+                text-shadow: 0 0 20px #0f0;
+                animation: pulse 2s ease-in-out infinite;
+            }
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.7; }
+            }
+            .info { 
+                margin: 2em auto; 
+                color: #0ff; 
+                max-width: 600px;
+            }
+            .status-indicator {
+                display: inline-block;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #0f0;
+                animation: blink 1s ease-in-out infinite;
+                margin-right: 0.5em;
+            }
+            @keyframes blink {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.3; }
+            }
             kbd {
                 background: #333;
                 padding: 0.3em 0.6em;
                 border-radius: 3px;
                 border: 1px solid #0f0;
+                font-size: 1.1em;
+            }
+            a {
+                color: #0ff;
+                text-decoration: none;
+                border: 1px solid #0ff;
+                padding: 0.5em 1em;
+                border-radius: 5px;
+                display: inline-block;
+                margin-top: 1em;
+                transition: all 0.3s;
+            }
+            a:hover {
+                background: rgba(0, 255, 255, 0.2);
+                transform: scale(1.05);
+            }
+            .warning {
+                color: #ff0;
+                font-size: 1.2em;
+                margin: 1.5em 0;
             }
         </style>
     </head>
     <body>
         <h1>🌀 Session Active 🌀</h1>
         <div class="info">
-            <p>Your session is now running.</p>
-            <p>Press <kbd>Alt+Shift+E</kbd> to exit at any time.</p>
-            <p><a href="/" style="color: #0ff;">Return to Start</a></p>
+            <p><span class="status-indicator"></span><strong>Session is running</strong></p>
+            <p class="warning">⚠️ Emergency Exit: Press <kbd>Alt+Shift+E</kbd> to stop immediately</p>
+            <p>Your personalized hypnosis session is now playing.</p>
+            <p>You can safely close this browser window.</p>
+            <p><a href="/">← Return to Home</a></p>
+            <p style="margin-top: 2em; font-size: 0.9em; color: #666;">
+                To stop the session via API: <code style="color: #999;">curl -X POST http://localhost:9999/api/stop</code>
+            </p>
         </div>
     </body>
     </html>

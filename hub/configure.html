@@ -382,10 +382,36 @@
       <!-- Action Buttons -->
       <div class="buttons">
         <button type="button" class="secondary" onclick="window.location.href='/'">← Back</button>
-        <button type="submit">Generate & Start Session →</button>
+        <button type="submit" id="submitButton">Generate & Start Session →</button>
+      </div>
+      
+      <!-- Loading indicator -->
+      <div id="loadingIndicator" style="display: none; text-align: center; margin-top: 2em;">
+        <div style="font-size: 2em; color: #f0f;">⏳ Generating AI Script...</div>
+        <div style="margin-top: 1em; color: #0ff;">This may take 1-2 minutes. Please wait...</div>
+        <div style="margin-top: 1em;">
+          <div class="spinner"></div>
+        </div>
       </div>
     </form>
   </div>
+  
+  <style>
+    .spinner {
+      border: 4px solid rgba(255, 0, 255, 0.3);
+      border-top: 4px solid #f0f;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
   
   <script>
     // Model information database
@@ -464,6 +490,45 @@
       safetyLabel.textContent = `${level} - ${info.name}`;
       safetyLabel.style.color = info.color;
       safetyInfo.textContent = info.desc;
+    });
+    
+    // Form submission handler with loading indicator
+    const configForm = document.getElementById('configForm');
+    const submitButton = document.getElementById('submitButton');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    
+    configForm.addEventListener('submit', function(e) {
+      // Show loading indicator
+      submitButton.disabled = true;
+      submitButton.textContent = 'Generating...';
+      loadingIndicator.style.display = 'block';
+      
+      // Scroll to loading indicator
+      loadingIndicator.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    
+    // Add form validation
+    configForm.addEventListener('submit', function(e) {
+      const duration = parseInt(document.getElementById('duration').value);
+      
+      if (duration < 5 || duration > 60) {
+        e.preventDefault();
+        alert('Please enter a duration between 5 and 60 minutes.');
+        submitButton.disabled = false;
+        submitButton.textContent = 'Generate & Start Session →';
+        loadingIndicator.style.display = 'none';
+        return false;
+      }
+      
+      // Check if at least one kink zone is selected
+      if (selectedZones.length === 0) {
+        e.preventDefault();
+        alert('Please select at least one kink zone.');
+        submitButton.disabled = false;
+        submitButton.textContent = 'Generate & Start Session →';
+        loadingIndicator.style.display = 'none';
+        return false;
+      }
     });
   </script>
 </body>
