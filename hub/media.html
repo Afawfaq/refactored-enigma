@@ -1,0 +1,686 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Media Manager - Hypno Hub</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #000 0%, #1a001a 100%);
+      color: #f0f;
+      font-family: 'Courier New', monospace;
+      padding: 2em;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      font-size: 2.5em;
+      text-align: center;
+      margin-bottom: 1em;
+      text-shadow: 0 0 20px #f0f;
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 0.5em;
+      margin-bottom: 2em;
+      border-bottom: 2px solid #f0f;
+    }
+    
+    .tab {
+      padding: 1em 2em;
+      background: rgba(255, 0, 255, 0.1);
+      border: 1px solid #666;
+      border-bottom: none;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .tab:hover {
+      background: rgba(255, 0, 255, 0.2);
+    }
+    
+    .tab.active {
+      background: rgba(255, 0, 255, 0.3);
+      border-color: #f0f;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .section {
+      background: rgba(255, 0, 255, 0.05);
+      border: 1px solid #f0f;
+      border-radius: 10px;
+      padding: 2em;
+      margin-bottom: 2em;
+    }
+    
+    .section h2 {
+      color: #0ff;
+      margin-bottom: 1em;
+      font-size: 1.5em;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5em;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5em;
+      color: #0ff;
+      font-weight: bold;
+    }
+    
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.8em;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid #f0f;
+      border-radius: 5px;
+      color: #0ff;
+      font-family: 'Courier New', monospace;
+      font-size: 1em;
+    }
+    
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    
+    button {
+      padding: 0.8em 2em;
+      background: linear-gradient(135deg, #f0f 0%, #00f 100%);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
+      transition: all 0.3s;
+      font-size: 1em;
+    }
+    
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 25px rgba(255, 0, 255, 0.6);
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    button.secondary {
+      background: linear-gradient(135deg, #666 0%, #333 100%);
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1em;
+      margin-bottom: 2em;
+    }
+    
+    .stat-card {
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid #f0f;
+      border-radius: 8px;
+      padding: 1.5em;
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 2em;
+      color: #0ff;
+      font-weight: bold;
+    }
+    
+    .stat-label {
+      color: #f0f;
+      margin-top: 0.5em;
+    }
+    
+    .file-list {
+      max-height: 400px;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid #666;
+      border-radius: 5px;
+      padding: 1em;
+    }
+    
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5em;
+      border-bottom: 1px solid #333;
+    }
+    
+    .file-item:hover {
+      background: rgba(255, 0, 255, 0.1);
+    }
+    
+    .status-message {
+      padding: 1em;
+      margin: 1em 0;
+      border-radius: 5px;
+      display: none;
+    }
+    
+    .status-message.success {
+      background: rgba(0, 255, 0, 0.2);
+      border: 1px solid #0f0;
+      color: #0f0;
+    }
+    
+    .status-message.error {
+      background: rgba(255, 0, 0, 0.2);
+      border: 1px solid #f00;
+      color: #f00;
+    }
+    
+    .status-message.info {
+      background: rgba(0, 255, 255, 0.2);
+      border: 1px solid #0ff;
+      color: #0ff;
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 0, 255, 0.3);
+      border-top: 3px solid #f0f;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 1em;
+      vertical-align: middle;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .api-info {
+      background: rgba(255, 255, 0, 0.1);
+      border: 1px solid #ff0;
+      border-radius: 5px;
+      padding: 1em;
+      margin: 1em 0;
+      color: #ff0;
+    }
+    
+    a {
+      color: #0ff;
+      text-decoration: none;
+    }
+    
+    a:hover {
+      color: #f0f;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎬 Media Manager 🎬</h1>
+    
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('stats')">Statistics</div>
+      <div class="tab" onclick="switchTab('download')">Download</div>
+      <div class="tab" onclick="switchTab('search')">Search & Download</div>
+      <div class="tab" onclick="switchTab('manage')">Manage</div>
+      <div class="tab" onclick="switchTab('list')">Browse Files</div>
+    </div>
+    
+    <!-- Statistics Tab -->
+    <div id="stats-tab" class="tab-content active">
+      <div class="section">
+        <h2>Media Library Statistics</h2>
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card">
+            <div class="stat-value" id="statImages">--</div>
+            <div class="stat-label">Images</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statVideos">--</div>
+            <div class="stat-label">Videos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statAudio">--</div>
+            <div class="stat-label">Audio</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statTotal">--</div>
+            <div class="stat-label">Total Files</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statSize">--</div>
+            <div class="stat-label">Total Size</div>
+          </div>
+        </div>
+        <button onclick="refreshStats()">🔄 Refresh Stats</button>
+        <button onclick="window.location.href='/'" class="secondary">← Back to Home</button>
+      </div>
+    </div>
+    
+    <!-- Download Tab -->
+    <div id="download-tab" class="tab-content">
+      <div class="section">
+        <h2>Download from URLs</h2>
+        <div id="downloadStatus" class="status-message"></div>
+        
+        <div class="form-group">
+          <label for="downloadType">Media Type:</label>
+          <select id="downloadType">
+            <option value="image">Images</option>
+            <option value="video">Videos</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="downloadUrls">URLs (one per line):</label>
+          <textarea id="downloadUrls" placeholder="https://example.com/image1.jpg
+https://example.com/image2.png
+https://example.com/video1.mp4"></textarea>
+        </div>
+        
+        <button onclick="downloadFromUrls()">⬇️ Download</button>
+      </div>
+    </div>
+    
+    <!-- Search Tab -->
+    <div id="search-tab" class="tab-content">
+      <div class="section">
+        <h2>Search and Download Images</h2>
+        <div class="api-info">
+          <strong>⚠️ API Keys Required:</strong> To use this feature, set environment variables:<br>
+          • UNSPLASH_API_KEY<br>
+          • PEXELS_API_KEY<br>
+          • PIXABAY_API_KEY
+        </div>
+        <div id="searchStatus" class="status-message"></div>
+        
+        <div class="form-group">
+          <label for="searchQuery">Search Query:</label>
+          <input type="text" id="searchQuery" placeholder="e.g., 'hypnotic spiral', 'meditation', 'abstract art'">
+        </div>
+        
+        <div class="form-group">
+          <label for="searchCount">Number of Images:</label>
+          <input type="number" id="searchCount" value="10" min="1" max="50">
+        </div>
+        
+        <div class="form-group">
+          <label>Sources:</label>
+          <div>
+            <label style="display: inline; margin-right: 1em;">
+              <input type="checkbox" id="sourceUnsplash" checked> Unsplash
+            </label>
+            <label style="display: inline; margin-right: 1em;">
+              <input type="checkbox" id="sourcePexels" checked> Pexels
+            </label>
+            <label style="display: inline;">
+              <input type="checkbox" id="sourcePixabay" checked> Pixabay
+            </label>
+          </div>
+        </div>
+        
+        <button onclick="searchAndDownload()">🔍 Search & Download</button>
+      </div>
+    </div>
+    
+    <!-- Manage Tab -->
+    <div id="manage-tab" class="tab-content">
+      <div class="section">
+        <h2>Media Management Tools</h2>
+        <div id="manageStatus" class="status-message"></div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1em;">
+          <div>
+            <h3 style="color: #0ff; margin-bottom: 1em;">Optimize Images</h3>
+            <div class="form-group">
+              <label for="maxDimension">Max Dimension:</label>
+              <input type="number" id="maxDimension" value="1920">
+            </div>
+            <div class="form-group">
+              <label for="quality">Quality (1-100):</label>
+              <input type="number" id="quality" value="85" min="1" max="100">
+            </div>
+            <button onclick="optimizeImages()">⚡ Optimize</button>
+          </div>
+          
+          <div>
+            <h3 style="color: #0ff; margin-bottom: 1em;">Video Thumbnails</h3>
+            <p style="margin-bottom: 1em;">Generate thumbnails for all videos</p>
+            <button onclick="generateThumbnails()">🖼️ Generate Thumbnails</button>
+          </div>
+          
+          <div>
+            <h3 style="color: #0ff; margin-bottom: 1em;">Find Duplicates</h3>
+            <p style="margin-bottom: 1em;">Find duplicate files in your library</p>
+            <button onclick="findDuplicates()">🔍 Find Duplicates</button>
+          </div>
+          
+          <div>
+            <h3 style="color: #0ff; margin-bottom: 1em;">Clear Media</h3>
+            <div class="form-group">
+              <label for="clearType">Type:</label>
+              <select id="clearType">
+                <option value="images">Images Only</option>
+                <option value="videos">Videos Only</option>
+                <option value="audio">Audio Only</option>
+                <option value="all">All Media</option>
+              </select>
+            </div>
+            <button onclick="clearMedia()" style="background: linear-gradient(135deg, #f00 0%, #800 100%);">🗑️ Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- List Tab -->
+    <div id="list-tab" class="tab-content">
+      <div class="section">
+        <h2>Browse Media Files</h2>
+        <div class="form-group">
+          <label for="listType">Filter:</label>
+          <select id="listType" onchange="listFiles()">
+            <option value="all">All Media</option>
+            <option value="images">Images Only</option>
+            <option value="videos">Videos Only</option>
+            <option value="audio">Audio Only</option>
+          </select>
+        </div>
+        <div class="file-list" id="fileList">
+          <p>Loading...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Tab switching
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(tabName + '-tab').classList.add('active');
+      
+      // Load data when switching to certain tabs
+      if (tabName === 'stats') {
+        refreshStats();
+      } else if (tabName === 'list') {
+        listFiles();
+      }
+    }
+    
+    // Show status message
+    function showStatus(elementId, message, type = 'info') {
+      const statusEl = document.getElementById(elementId);
+      statusEl.textContent = message;
+      statusEl.className = 'status-message ' + type;
+      statusEl.style.display = 'block';
+      
+      if (type === 'success' || type === 'info') {
+        setTimeout(() => {
+          statusEl.style.display = 'none';
+        }, 5000);
+      }
+    }
+    
+    // Refresh statistics
+    async function refreshStats() {
+      try {
+        const response = await fetch('/api/media/stats');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          document.getElementById('statImages').textContent = data.stats.images.count;
+          document.getElementById('statVideos').textContent = data.stats.videos.count;
+          document.getElementById('statAudio').textContent = data.stats.audio.count;
+          document.getElementById('statTotal').textContent = data.total_files;
+          document.getElementById('statSize').textContent = data.total_size_mb.toFixed(2) + ' MB';
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    }
+    
+    // Download from URLs
+    async function downloadFromUrls() {
+      const type = document.getElementById('downloadType').value;
+      const urls = document.getElementById('downloadUrls').value
+        .split('\n')
+        .map(url => url.trim())
+        .filter(url => url.length > 0);
+      
+      if (urls.length === 0) {
+        showStatus('downloadStatus', 'Please enter at least one URL', 'error');
+        return;
+      }
+      
+      showStatus('downloadStatus', 'Downloading... ⏳', 'info');
+      
+      try {
+        const response = await fetch('/api/media/download', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({urls, type})
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('downloadStatus', 
+            `Success! Downloaded: ${data.result.success}, Failed: ${data.result.failed}, Skipped: ${data.result.skipped}`,
+            'success');
+          document.getElementById('downloadUrls').value = '';
+          refreshStats();
+        } else {
+          showStatus('downloadStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('downloadStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    // Search and download
+    async function searchAndDownload() {
+      const query = document.getElementById('searchQuery').value.trim();
+      const count = parseInt(document.getElementById('searchCount').value);
+      
+      const sources = [];
+      if (document.getElementById('sourceUnsplash').checked) sources.push('unsplash');
+      if (document.getElementById('sourcePexels').checked) sources.push('pexels');
+      if (document.getElementById('sourcePixabay').checked) sources.push('pixabay');
+      
+      if (!query) {
+        showStatus('searchStatus', 'Please enter a search query', 'error');
+        return;
+      }
+      
+      if (sources.length === 0) {
+        showStatus('searchStatus', 'Please select at least one source', 'error');
+        return;
+      }
+      
+      showStatus('searchStatus', 'Searching and downloading... ⏳', 'info');
+      
+      try {
+        const response = await fetch('/api/media/search', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({query, count, sources})
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('searchStatus',
+            `Success! Downloaded: ${data.result.success}, Failed: ${data.result.failed}, Skipped: ${data.result.skipped}`,
+            'success');
+          refreshStats();
+        } else {
+          showStatus('searchStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('searchStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    // Optimize images
+    async function optimizeImages() {
+      const maxDimension = parseInt(document.getElementById('maxDimension').value);
+      const quality = parseInt(document.getElementById('quality').value);
+      
+      showStatus('manageStatus', 'Optimizing images... ⏳', 'info');
+      
+      try {
+        const response = await fetch('/api/media/optimize', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({max_dimension: maxDimension, quality})
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('manageStatus', `Optimized ${data.optimized} images`, 'success');
+          refreshStats();
+        } else {
+          showStatus('manageStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('manageStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    // Generate thumbnails
+    async function generateThumbnails() {
+      showStatus('manageStatus', 'Generating thumbnails... ⏳', 'info');
+      
+      try {
+        const response = await fetch('/api/media/thumbnails', {
+          method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('manageStatus', `Generated ${data.generated} thumbnails`, 'success');
+        } else {
+          showStatus('manageStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('manageStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    // Find duplicates
+    async function findDuplicates() {
+      showStatus('manageStatus', 'Finding duplicates... ⏳', 'info');
+      
+      try {
+        const response = await fetch('/api/media/duplicates');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('manageStatus', `Found ${data.duplicate_sets} sets of duplicate files`, 'info');
+        } else {
+          showStatus('manageStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('manageStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    // Clear media
+    async function clearMedia() {
+      const type = document.getElementById('clearType').value;
+      
+      if (!confirm(`Are you sure you want to clear ${type}? This cannot be undone!`)) {
+        return;
+      }
+      
+      showStatus('manageStatus', 'Clearing media... ⏳', 'info');
+      
+      try {
+        const response = await fetch('/api/media/clear', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({type})
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('manageStatus', `Cleared ${type}`, 'success');
+          refreshStats();
+        } else {
+          showStatus('manageStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('manageStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    // List files
+    async function listFiles() {
+      const type = document.getElementById('listType').value;
+      const fileList = document.getElementById('fileList');
+      
+      fileList.innerHTML = '<p>Loading...</p>';
+      
+      try {
+        const response = await fetch(`/api/media/list?type=${type}&info=true`);
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.files.length > 0) {
+          fileList.innerHTML = '';
+          data.files.forEach(file => {
+            const div = document.createElement('div');
+            div.className = 'file-item';
+            div.innerHTML = `
+              <span>${file.filename}</span>
+              <span>${file.size_mb} MB | ${file.type}</span>
+            `;
+            fileList.appendChild(div);
+          });
+        } else {
+          fileList.innerHTML = '<p>No files found</p>';
+        }
+      } catch (error) {
+        fileList.innerHTML = '<p>Error loading files</p>';
+      }
+    }
+    
+    // Load stats on page load
+    window.addEventListener('load', () => {
+      refreshStats();
+    });
+  </script>
+</body>
+</html>

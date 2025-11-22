@@ -25,6 +25,13 @@ except ImportError:
     def list_kink_zones(): return []
     def list_models(): return []
 
+# Import media downloader
+try:
+    from media_downloader import MediaDownloader
+except ImportError:
+    MediaDownloader = None
+    logger.warning("MediaDownloader not available")
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -285,6 +292,16 @@ def start():
         return f"Error starting session: {e}", 500
 
 
+@app.route('/media')
+def media_manager():
+    """Serve the media manager page."""
+    try:
+        with open('/home/beta/hub/media.html', 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        return "<h1>Media Manager not found</h1>", 404
+
+
 @app.route('/session')
 def session():
     """Display session active page with status monitoring."""
@@ -521,9 +538,237 @@ def api_models():
         return jsonify({'error': 'Failed to retrieve models'}), 500
 
 
+@app.route('/api/media/stats')
+def api_media_stats():
+    """Get media statistics."""
+    if not MediaDownloader:
+        return jsonify({'error': 'MediaDownloader not available'}), 503
+    
+    try:
+        downloader = MediaDownloader()
+        stats = downloader.get_media_stats()
+        files = downloader.list_media_files(include_info=True)
+        
+        return jsonify({
+            'status': 'success',
+            'stats': stats,
+            'total_files': len(files),
+            'total_size_mb': sum(f['size_mb'] for f in files)
+        })
+    except Exception as e:
+        logger.error(f"Error getting media stats: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/media/download', methods=['POST'])
+def api_media_download():
+    """Download media from URLs."""
+    if not MediaDownloader:
+        return jsonify({'error': 'MediaDownloader not available'}), 503
+    
+    # Rate limiting
+    client_ip = request.remote_addr
+    if not check_rate_limit(f"media_download_{client_ip}", limit=5, window=60):
+        return jsonify({'error': 'Too many download requests'}), 429
+    
+    try:
+        data = request.get_json()
+        urls = data.get('urls', [])
+        media_type = data.get('type', 'image')
+        
+        if not urls:
+            return jsonify({'error': 'No URLs provided'}), 400
+        
+        downloader = MediaDownloader()
+        
+        if media_type == 'image':
+            result = downloader.download_images(urls)
+        elif media_type == 'video':
+            result = downloader.download_videos(urls)
+        else:
+            return jsonify({'error': 'Invalid media type'}), 400
+        
+        return jsonify({
+            'status': 'success',
+            'result': result
+        })
+        
+    except Exception as e:
+        logger.error(f"Error downloading media: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/media/search', methods=['POST'])
+def api_media_search():
+    """Search and download images from APIs."""
+    if not MediaDownloader:
+        return jsonify({'error': 'MediaDownloader not available'}), 503
+    
+    # Rate limiting
+    client_ip = request.remote_addr
+    if not check_rate_limit(f"media_search_{client_ip}", limit=3, window=60):
+        return jsonify({'error': 'Too many search requests'}), 429
+    
+    try:
+        data = request.get_json()
+        query = data.get('query', '')
+        count = min(int(data.get('count', 10)), 50)  # Max 50
+        sources = data.get('sources', ['unsplash', 'pexels', 'pixabay'])
+        
+        if not query:
+            return jsonify({'error': 'No query provided'}), 400
+        
+        downloader = MediaDownloader()
+        result = downloader.search_and_download_images(query, count, sources)
+        
+        return jsonify({
+            'status': 'success',
+            'query': query,
+            'result': result
+        })
+        
+    except Exception as e:
+        logger.error(f"Error searching media: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/media/list')
+def api_media_list():
+    """List all media files."""
+    if not MediaDownloader:
+        return jsonify({'error': 'MediaDownloader not available'}), 503
+    
+    try:
+        media_type = request.args.get('type', 'all')
+        include_info = request.args.get('info', 'false').lower() == 'true'
+        
+        downloader = MediaDownloader()
+        files = downloader.list_media_files(media_type, include_info)
+        
+        return jsonify({
+            'status': 'success',
+            'type': media_type,
+            'count': len(files),
+            'files': files
+        })
+        
+    except Exception as e:
+        logger.error(f"Error listing media: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/media/optimize', methods=['POST'])
+def api_media_optimize():
+    """Optimize images."""
+    if not MediaDownloader:
+        return jsonify({'error': 'MediaDownloader not available'}), 503
+    
+    # Rate limiting
+    client_ip = request.remote_addr
+    if not check_rate_limit(f"media_optimize_{client_ip}", limit=2, window=60):
+        return jsonify({'error': 'Too many optimization requests'}), 429
+    
+    try:
+        data = request.get_json() or {}
+        max_dimension = int(data.get('max_dimension', 1920))
+        quality = int(data.get('quality', 85))
+        
+        downloader = MediaDownloader()
+        count = downloader.optimize_images(max_dimension, quality)
+        
+        return jsonify({
+            'status': 'success',
+            'optimized': count
+        })
+        
+    except Exception as e:
+        logger.error(f"Error optimizing media: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/media/thumbnails', methods=['POST'])
+def api_media_thumbnails():
+    """Generate video thumbnails."""
+    if not MediaDownloader:
+        return jsonify({'error': 'MediaDownloader not available'}), 503
+    
+    try:
+        downloader = MediaDownloader()
+        count = downloader.generate_thumbnails()
+        
+        return jsonify({
+            'status': 'success',
+            'generated': count
+        })
+        
+    except Exception as e:
+        logger.error(f"Error generating thumbnails: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/media/duplicates')
+def api_media_duplicates():
+    """Find duplicate files."""
+    if not MediaDownloader:
+        return jsonify({'error': 'MediaDownloader not available'}), 503
+    
+    try:
+        downloader = MediaDownloader()
+        duplicates = downloader.find_duplicates()
+        
+        return jsonify({
+            'status': 'success',
+            'duplicate_sets': len(duplicates),
+            'duplicates': duplicates
+        })
+        
+    except Exception as e:
+        logger.error(f"Error finding duplicates: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/media/clear', methods=['POST'])
+def api_media_clear():
+    """Clear media files."""
+    if not MediaDownloader:
+        return jsonify({'error': 'MediaDownloader not available'}), 503
+    
+    # Rate limiting
+    client_ip = request.remote_addr
+    if not check_rate_limit(f"media_clear_{client_ip}", limit=2, window=60):
+        return jsonify({'error': 'Too many clear requests'}), 429
+    
+    try:
+        data = request.get_json() or {}
+        media_type = data.get('type', 'all')
+        
+        downloader = MediaDownloader()
+        success = downloader.clear_media(media_type)
+        
+        return jsonify({
+            'status': 'success' if success else 'failed',
+            'cleared': media_type
+        })
+        
+    except Exception as e:
+        logger.error(f"Error clearing media: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     logger.info("Starting Hypno Hub on port 9999")
     logger.info(f"Ollama host: {os.getenv('OLLAMA_HOST', 'http://host.docker.internal:11434')}")
+    
+    # Initialize media downloader if available
+    if MediaDownloader:
+        try:
+            downloader = MediaDownloader()
+            stats = downloader.get_media_stats()
+            logger.info(f"Media Library: {stats['images']['count']} images, "
+                       f"{stats['videos']['count']} videos, "
+                       f"{stats['audio']['count']} audio files")
+        except Exception as e:
+            logger.warning(f"Could not initialize MediaDownloader: {e}")
     
     app.run(
         host='0.0.0.0',
