@@ -21,6 +21,9 @@ A **privacy-first, containerized platform** for creating and experiencing person
 - **🔐 Privacy-Focused**: All processing happens locally, no data leaves your machine
 - **⚡ Hardware Accelerated**: GPU support for smooth video playback (AMD 7800 XT optimized)
 - **🐧 Ubuntu 25.04 Optimized**: Kernel 6.14, Python 3.13, ROCm 6.2+, Docker 28+
+- **🛡️ Security Hardened**: Input validation, rate limiting, and security headers
+- **📊 Health Monitoring**: Detailed health checks and status endpoints
+- **⚡ Performance Optimized**: API caching and connection retry logic
 
 ## ⚠️ Safety & Ethics
 
@@ -151,7 +154,10 @@ ollama pull llama3.1:8b
 
 - **[Ubuntu 25.04 Setup Guide](UBUNTU-25.04-SETUP.md)** - Comprehensive Ubuntu 25.04 installation, GPU passthrough, and optimization
 - **[Windows Setup Guide](WINDOWS-SETUP.md)** - Complete Windows installation and configuration guide
+- **[Windows AMD GPU Setup](WINDOWS-AMD-GPU-SETUP.md)** - 🆕 AMD RX 7800 XT setup with ROCm, DirectML, ComfyUI, and Ollama on Windows 11
 - **[Complete Setup Guide](SETUP.md)** - Detailed installation and configuration for all platforms
+- **[Media Downloader Guide](MEDIA-DOWNLOADER.md)** - Automatic media discovery and download from the internet
+- **[Improvements Documentation](IMPROVEMENTS.md)** - Recent security, UX, and performance improvements
 - **Architecture** - See SETUP.md for technical details
 - **Troubleshooting** - Platform-specific guides in respective documentation
 
@@ -171,6 +177,18 @@ ollama pull llama3.1:8b
 - **Docker**: `docker compose down`
 
 ### Adding Media
+
+**Option 1: Automatic Download (NEW!)**
+
+Access the Media Manager at `http://localhost:9999/media` to:
+- Search and download images from Unsplash, Pexels, and Pixabay
+- Download videos from YouTube
+- Download from direct URLs
+- Optimize and manage your media library
+
+See [MEDIA-DOWNLOADER.md](MEDIA-DOWNLOADER.md) for complete documentation.
+
+**Option 2: Manual Upload**
 
 ```bash
 # Add your content to these directories:

@@ -39,13 +39,16 @@ class TestFlaskRoutes(unittest.TestCase):
     def test_health_route(self):
         """Test the health check endpoint."""
         response = self.client.get('/health')
-        self.assertEqual(response.status_code, 200)
+        # Health check returns 200 or 503 depending on Ollama availability
+        self.assertIn(response.status_code, [200, 503])
         
         data = response.get_json()
         self.assertIn('status', data)
-        self.assertEqual(data['status'], 'healthy')
+        self.assertIn(data['status'], ['healthy', 'degraded'])
         self.assertIn('service', data)
         self.assertIn('version', data)
+        self.assertIn('timestamp', data)
+        self.assertIn('ollama', data)
     
     def test_configure_route_get(self):
         """Test the configure page GET request."""
@@ -118,7 +121,11 @@ class TestFlaskRoutes(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         
         data = response.get_json()
-        self.assertIsInstance(data, list)
+        self.assertIsInstance(data, dict)
+        self.assertEqual(data['status'], 'success')
+        self.assertIn('data', data)
+        self.assertIsInstance(data['data'], list)
+        self.assertIn('count', data)
     
     def test_api_kink_zones(self):
         """Test the kink zones API endpoint."""
@@ -126,7 +133,11 @@ class TestFlaskRoutes(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         
         data = response.get_json()
-        self.assertIsInstance(data, list)
+        self.assertIsInstance(data, dict)
+        self.assertEqual(data['status'], 'success')
+        self.assertIn('data', data)
+        self.assertIsInstance(data['data'], list)
+        self.assertIn('count', data)
     
     def test_api_models(self):
         """Test the models API endpoint."""
@@ -134,7 +145,11 @@ class TestFlaskRoutes(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         
         data = response.get_json()
-        self.assertIsInstance(data, list)
+        self.assertIsInstance(data, dict)
+        self.assertEqual(data['status'], 'success')
+        self.assertIn('data', data)
+        self.assertIsInstance(data['data'], list)
+        self.assertIn('count', data)
 
 
 class TestErrorHandling(unittest.TestCase):

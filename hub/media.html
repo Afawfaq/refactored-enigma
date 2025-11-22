@@ -1,0 +1,1155 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Media Manager - Hypno Hub</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #000 0%, #1a001a 100%);
+      color: #f0f;
+      font-family: 'Courier New', monospace;
+      padding: 2em;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      font-size: 2.5em;
+      text-align: center;
+      margin-bottom: 1em;
+      text-shadow: 0 0 20px #f0f;
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 0.5em;
+      margin-bottom: 2em;
+      border-bottom: 2px solid #f0f;
+    }
+    
+    .tab {
+      padding: 1em 2em;
+      background: rgba(255, 0, 255, 0.1);
+      border: 1px solid #666;
+      border-bottom: none;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .tab:hover {
+      background: rgba(255, 0, 255, 0.2);
+    }
+    
+    .tab.active {
+      background: rgba(255, 0, 255, 0.3);
+      border-color: #f0f;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .section {
+      background: rgba(255, 0, 255, 0.05);
+      border: 1px solid #f0f;
+      border-radius: 10px;
+      padding: 2em;
+      margin-bottom: 2em;
+    }
+    
+    .section h2 {
+      color: #0ff;
+      margin-bottom: 1em;
+      font-size: 1.5em;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5em;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5em;
+      color: #0ff;
+      font-weight: bold;
+    }
+    
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.8em;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid #f0f;
+      border-radius: 5px;
+      color: #0ff;
+      font-family: 'Courier New', monospace;
+      font-size: 1em;
+    }
+    
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    
+    button {
+      padding: 0.8em 2em;
+      background: linear-gradient(135deg, #f0f 0%, #00f 100%);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
+      transition: all 0.3s;
+      font-size: 1em;
+    }
+    
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 25px rgba(255, 0, 255, 0.6);
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    button.secondary {
+      background: linear-gradient(135deg, #666 0%, #333 100%);
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1em;
+      margin-bottom: 2em;
+    }
+    
+    .stat-card {
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid #f0f;
+      border-radius: 8px;
+      padding: 1.5em;
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 2em;
+      color: #0ff;
+      font-weight: bold;
+    }
+    
+    .stat-label {
+      color: #f0f;
+      margin-top: 0.5em;
+    }
+    
+    .file-list {
+      max-height: 400px;
+      overflow-y: auto;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid #666;
+      border-radius: 5px;
+      padding: 1em;
+    }
+    
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5em;
+      border-bottom: 1px solid #333;
+    }
+    
+    .file-item:hover {
+      background: rgba(255, 0, 255, 0.1);
+    }
+    
+    .status-message {
+      padding: 1em;
+      margin: 1em 0;
+      border-radius: 5px;
+      display: none;
+    }
+    
+    .status-message.success {
+      background: rgba(0, 255, 0, 0.2);
+      border: 1px solid #0f0;
+      color: #0f0;
+    }
+    
+    .status-message.error {
+      background: rgba(255, 0, 0, 0.2);
+      border: 1px solid #f00;
+      color: #f00;
+    }
+    
+    .status-message.info {
+      background: rgba(0, 255, 255, 0.2);
+      border: 1px solid #0ff;
+      color: #0ff;
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 0, 255, 0.3);
+      border-top: 3px solid #f0f;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 1em;
+      vertical-align: middle;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .api-info {
+      background: rgba(255, 255, 0, 0.1);
+      border: 1px solid #ff0;
+      border-radius: 5px;
+      padding: 1em;
+      margin: 1em 0;
+      color: #ff0;
+    }
+    
+    a {
+      color: #0ff;
+      text-decoration: none;
+    }
+    
+    a:hover {
+      color: #f0f;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎬 Media Manager 🎬</h1>
+    
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('stats')">Statistics</div>
+      <div class="tab" onclick="switchTab('download')">Download</div>
+      <div class="tab" onclick="switchTab('organize')">Organize</div>
+      <div class="tab" onclick="switchTab('manage')">Manage</div>
+      <div class="tab" onclick="switchTab('list')">Browse Files</div>
+    </div>
+    
+    <!-- Statistics Tab -->
+    <div id="stats-tab" class="tab-content active">
+      <div class="section">
+        <h2>Media Library Statistics</h2>
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card">
+            <div class="stat-value" id="statImages">--</div>
+            <div class="stat-label">Images</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statVideos">--</div>
+            <div class="stat-label">Videos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statAudio">--</div>
+            <div class="stat-label">Audio</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statTotal">--</div>
+            <div class="stat-label">Total Files</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="statSize">--</div>
+            <div class="stat-label">Total Size</div>
+          </div>
+        </div>
+        <button onclick="refreshStats()">🔄 Refresh Stats</button>
+        <button onclick="window.location.href='/'" class="secondary">← Back to Home</button>
+      </div>
+    </div>
+    
+    <!-- Download Tab -->
+    <div id="download-tab" class="tab-content">
+      <div class="section">
+        <h2>Download from URLs</h2>
+        <div id="downloadStatus" class="status-message"></div>
+        
+        <div class="form-group">
+          <label for="downloadType">Media Type:</label>
+          <select id="downloadType">
+            <option value="image">Images</option>
+            <option value="video">Videos</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="downloadUrls">URLs (one per line):</label>
+          <textarea id="downloadUrls" placeholder="https://example.com/image1.jpg
+https://example.com/image2.png
+https://example.com/video1.mp4"></textarea>
+        </div>
+        
+        <button onclick="downloadFromUrls()">⬇️ Download</button>
+      </div>
+    </div>
+    
+    <!-- Organize Tab -->
+    <div id="organize-tab" class="tab-content">
+      <div class="section">
+        <h2>Media Organization</h2>
+        <p style="margin-bottom: 2em; color: #0ff;">Organize your media with playlists, categories, and tags for better management.</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2em;">
+          <!-- Playlists Section -->
+          <div>
+            <h3 style="color: #0ff; margin-bottom: 1em;">📋 Playlists</h3>
+            <div id="playlistStatus" class="status-message"></div>
+            
+            <div class="form-group">
+              <label for="playlistName">Playlist Name:</label>
+              <input type="text" id="playlistName" placeholder="My Playlist">
+            </div>
+            <div class="form-group">
+              <label for="playlistDesc">Description:</label>
+              <textarea id="playlistDesc" placeholder="Playlist description..." rows="2"></textarea>
+            </div>
+            <button onclick="createPlaylist()">➕ Create Playlist</button>
+            
+            <h4 style="margin-top: 2em; color: #f0f;">Your Playlists:</h4>
+            <div id="playlistList" style="margin-top: 1em;"></div>
+          </div>
+          
+          <!-- Categories Section -->
+          <div>
+            <h3 style="color: #0ff; margin-bottom: 1em;">📁 Categories</h3>
+            <div id="categoryStatus" class="status-message"></div>
+            
+            <div class="form-group">
+              <label for="categoryName">Category Name:</label>
+              <input type="text" id="categoryName" placeholder="e.g., Spirals, Nature, Abstract">
+            </div>
+            <button onclick="addCategory()">➕ Add Category</button>
+            
+            <h4 style="margin-top: 2em; color: #f0f;">Available Categories:</h4>
+            <div id="categoryList" style="margin-top: 1em;"></div>
+          </div>
+          
+          <!-- Tags Section -->
+          <div>
+            <h3 style="color: #0ff; margin-bottom: 1em;">🏷️ Tags</h3>
+            <div id="tagStatus" class="status-message"></div>
+            
+            <div class="form-group">
+              <label for="tagName">Tag Name:</label>
+              <input type="text" id="tagName" placeholder="e.g., relaxing, intense, visual">
+            </div>
+            <button onclick="addTag()">➕ Add Tag</button>
+            
+            <h4 style="margin-top: 2em; color: #f0f;">Available Tags:</h4>
+            <div id="tagList" style="margin-top: 1em;"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- File Organization Section -->
+      <div class="section">
+        <h2>Organize Files</h2>
+        <div id="organizeStatus" class="status-message"></div>
+        
+        <div class="form-group">
+          <label for="organizeFilename">Select File:</label>
+          <select id="organizeFilename" style="padding: 0.5em;">
+            <option value="">-- Select a file --</option>
+          </select>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1em; margin-top: 1em;">
+          <div>
+            <label>Category:</label>
+            <select id="organizeCategory" style="padding: 0.5em; width: 100%; margin-top: 0.5em;">
+              <option value="">-- No category --</option>
+            </select>
+          </div>
+          
+          <div>
+            <label>Add to Playlist:</label>
+            <select id="organizePlaylist" style="padding: 0.5em; width: 100%; margin-top: 0.5em;">
+              <option value="">-- Select playlist --</option>
+            </select>
+            <button onclick="addFileToPlaylist()" style="margin-top: 0.5em; width: 100%;">Add to Playlist</button>
+          </div>
+          
+          <div>
+            <label>Add Tags:</label>
+            <div id="tagCheckboxes" style="margin-top: 0.5em; max-height: 150px; overflow-y: auto;"></div>
+          </div>
+        </div>
+        
+        <button onclick="saveFileOrganization()" style="margin-top: 1em;">💾 Save Organization</button>
+        
+        <div id="currentFileInfo" style="margin-top: 2em; padding: 1em; background: rgba(0,255,255,0.1); border: 1px solid #0ff; border-radius: 5px;"></div>
+      </div>
+      
+      <!-- Search and Filter Section -->
+      <div class="section">
+        <h2>Search & Filter</h2>
+        <div id="searchStatus" class="status-message"></div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1em;">
+          <div class="form-group">
+            <label for="searchQuery">Search Filename:</label>
+            <input type="text" id="searchQuery" placeholder="Enter search term...">
+          </div>
+          
+          <div class="form-group">
+            <label for="filterCategory">Filter by Category:</label>
+            <select id="filterCategory">
+              <option value="">All Categories</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="filterTags">Filter by Tags:</label>
+            <select id="filterTags" multiple size="3">
+            </select>
+          </div>
+        </div>
+        
+        <button onclick="searchMedia()">🔍 Search</button>
+        
+        <div id="searchResults" style="margin-top: 2em;"></div>
+      </div>
+    </div>
+    
+    <!-- Manage Tab -->
+    <div id="manage-tab" class="tab-content">
+      <div class="section">
+        <h2>Media Management Tools</h2>
+        <div id="manageStatus" class="status-message"></div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1em;">
+          <div>
+            <h3 style="color: #0ff; margin-bottom: 1em;">Optimize Images</h3>
+            <div class="form-group">
+              <label for="maxDimension">Max Dimension:</label>
+              <input type="number" id="maxDimension" value="1920">
+            </div>
+            <div class="form-group">
+              <label for="quality">Quality (1-100):</label>
+              <input type="number" id="quality" value="85" min="1" max="100">
+            </div>
+            <button onclick="optimizeImages()">⚡ Optimize</button>
+          </div>
+          
+          <div>
+            <h3 style="color: #0ff; margin-bottom: 1em;">Video Thumbnails</h3>
+            <p style="margin-bottom: 1em;">Generate thumbnails for all videos</p>
+            <button onclick="generateThumbnails()">🖼️ Generate Thumbnails</button>
+          </div>
+          
+          <div>
+            <h3 style="color: #0ff; margin-bottom: 1em;">Find Duplicates</h3>
+            <p style="margin-bottom: 1em;">Find duplicate files in your library</p>
+            <button onclick="findDuplicates()">🔍 Find Duplicates</button>
+          </div>
+          
+          <div>
+            <h3 style="color: #0ff; margin-bottom: 1em;">Clear Media</h3>
+            <div class="form-group">
+              <label for="clearType">Type:</label>
+              <select id="clearType">
+                <option value="images">Images Only</option>
+                <option value="videos">Videos Only</option>
+                <option value="audio">Audio Only</option>
+                <option value="all">All Media</option>
+              </select>
+            </div>
+            <button onclick="clearMedia()" style="background: linear-gradient(135deg, #f00 0%, #800 100%);">🗑️ Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- List Tab -->
+    <div id="list-tab" class="tab-content">
+      <div class="section">
+        <h2>Browse Media Files</h2>
+        <div class="form-group">
+          <label for="listType">Filter:</label>
+          <select id="listType" onchange="listFiles()">
+            <option value="all">All Media</option>
+            <option value="images">Images Only</option>
+            <option value="videos">Videos Only</option>
+            <option value="audio">Audio Only</option>
+          </select>
+        </div>
+        <div class="file-list" id="fileList">
+          <p>Loading...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Tab switching
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(tabName + '-tab').classList.add('active');
+      
+      // Load data when switching to certain tabs
+      if (tabName === 'stats') {
+        refreshStats();
+      } else if (tabName === 'list') {
+        listFiles();
+      }
+    }
+    
+    // Show status message
+    function showStatus(elementId, message, type = 'info') {
+      const statusEl = document.getElementById(elementId);
+      statusEl.textContent = message;
+      statusEl.className = 'status-message ' + type;
+      statusEl.style.display = 'block';
+      
+      if (type === 'success' || type === 'info') {
+        setTimeout(() => {
+          statusEl.style.display = 'none';
+        }, 5000);
+      }
+    }
+    
+    // Refresh statistics
+    async function refreshStats() {
+      try {
+        const response = await fetch('/api/media/stats');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          document.getElementById('statImages').textContent = data.stats.images.count;
+          document.getElementById('statVideos').textContent = data.stats.videos.count;
+          document.getElementById('statAudio').textContent = data.stats.audio.count;
+          document.getElementById('statTotal').textContent = data.total_files;
+          document.getElementById('statSize').textContent = data.total_size_mb.toFixed(2) + ' MB';
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    }
+    
+    // Download from URLs
+    async function downloadFromUrls() {
+      const type = document.getElementById('downloadType').value;
+      const urls = document.getElementById('downloadUrls').value
+        .split('\n')
+        .map(url => url.trim())
+        .filter(url => url.length > 0);
+      
+      if (urls.length === 0) {
+        showStatus('downloadStatus', 'Please enter at least one URL', 'error');
+        return;
+      }
+      
+      showStatus('downloadStatus', 'Downloading... ⏳', 'info');
+      
+      try {
+        const response = await fetch('/api/media/download', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({urls, type})
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('downloadStatus', 
+            `Success! Downloaded: ${data.result.success}, Failed: ${data.result.failed}, Skipped: ${data.result.skipped}`,
+            'success');
+          document.getElementById('downloadUrls').value = '';
+          refreshStats();
+        } else {
+          showStatus('downloadStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('downloadStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    // Optimize images
+    async function optimizeImages() {
+      const maxDimension = parseInt(document.getElementById('maxDimension').value);
+      const quality = parseInt(document.getElementById('quality').value);
+      
+      showStatus('manageStatus', 'Optimizing images... ⏳', 'info');
+      
+      try {
+        const response = await fetch('/api/media/optimize', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({max_dimension: maxDimension, quality})
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('manageStatus', `Optimized ${data.optimized} images`, 'success');
+          refreshStats();
+        } else {
+          showStatus('manageStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('manageStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    // Generate thumbnails
+    async function generateThumbnails() {
+      showStatus('manageStatus', 'Generating thumbnails... ⏳', 'info');
+      
+      try {
+        const response = await fetch('/api/media/thumbnails', {
+          method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('manageStatus', `Generated ${data.generated} thumbnails`, 'success');
+        } else {
+          showStatus('manageStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('manageStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    // Find duplicates
+    async function findDuplicates() {
+      showStatus('manageStatus', 'Finding duplicates... ⏳', 'info');
+      
+      try {
+        const response = await fetch('/api/media/duplicates');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('manageStatus', `Found ${data.duplicate_sets} sets of duplicate files`, 'info');
+        } else {
+          showStatus('manageStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('manageStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    // Clear media
+    async function clearMedia() {
+      const type = document.getElementById('clearType').value;
+      
+      if (!confirm(`Are you sure you want to clear ${type}? This cannot be undone!`)) {
+        return;
+      }
+      
+      showStatus('manageStatus', 'Clearing media... ⏳', 'info');
+      
+      try {
+        const response = await fetch('/api/media/clear', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({type})
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('manageStatus', `Cleared ${type}`, 'success');
+          refreshStats();
+        } else {
+          showStatus('manageStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('manageStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    // List files
+    async function listFiles() {
+      const type = document.getElementById('listType').value;
+      const fileList = document.getElementById('fileList');
+      
+      fileList.innerHTML = '<p>Loading...</p>';
+      
+      try {
+        const response = await fetch(`/api/media/list?type=${type}&info=true`);
+        const data = await response.json();
+        
+        if (data.status === 'success' && data.files.length > 0) {
+          fileList.innerHTML = '';
+          data.files.forEach(file => {
+            const div = document.createElement('div');
+            div.className = 'file-item';
+            div.innerHTML = `
+              <span>${file.filename}</span>
+              <span>${file.size_mb} MB | ${file.type}</span>
+            `;
+            fileList.appendChild(div);
+          });
+        } else {
+          fileList.innerHTML = '<p>No files found</p>';
+        }
+      } catch (error) {
+        fileList.innerHTML = '<p>Error loading files</p>';
+      }
+    }
+    
+    // ===== Organization Functions =====
+    
+    // Load organization data
+    async function loadOrganizeTab() {
+      await Promise.all([
+        loadCategories(),
+        loadTags(),
+        loadPlaylists(),
+        loadFilesForOrganize()
+      ]);
+    }
+    
+    // Categories
+    async function loadCategories() {
+      try {
+        const response = await fetch('/api/media/categories');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          const categoryList = document.getElementById('categoryList');
+          const organizeCategory = document.getElementById('organizeCategory');
+          const filterCategory = document.getElementById('filterCategory');
+          
+          categoryList.innerHTML = '';
+          organizeCategory.innerHTML = '<option value="">-- No category --</option>';
+          filterCategory.innerHTML = '<option value="">All Categories</option>';
+          
+          data.categories.forEach(cat => {
+            // Add to list with delete button
+            const div = document.createElement('div');
+            div.style.cssText = 'display: flex; justify-content: space-between; padding: 0.5em; background: rgba(0,255,255,0.1); margin-bottom: 0.5em; border-radius: 3px;';
+            div.innerHTML = `
+              <span>${cat}</span>
+              <button onclick="deleteCategory('${cat}')" style="padding: 0.2em 0.5em; background: #f00;">❌</button>
+            `;
+            categoryList.appendChild(div);
+            
+            // Add to dropdowns
+            organizeCategory.innerHTML += `<option value="${cat}">${cat}</option>`;
+            filterCategory.innerHTML += `<option value="${cat}">${cat}</option>`;
+          });
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      }
+    }
+    
+    async function addCategory() {
+      const name = document.getElementById('categoryName').value.trim();
+      if (!name) {
+        showStatus('categoryStatus', 'Please enter a category name', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/media/categories', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({category: name})
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success' || data.status === 'exists') {
+          showStatus('categoryStatus', `Category "${name}" added`, 'success');
+          document.getElementById('categoryName').value = '';
+          loadCategories();
+        } else {
+          showStatus('categoryStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('categoryStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    async function deleteCategory(category) {
+      if (!confirm(`Delete category "${category}"?`)) return;
+      
+      try {
+        const response = await fetch('/api/media/categories', {
+          method: 'DELETE',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({category})
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('categoryStatus', `Category "${category}" deleted`, 'success');
+          loadCategories();
+        }
+      } catch (error) {
+        showStatus('categoryStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    // Tags
+    async function loadTags() {
+      try {
+        const response = await fetch('/api/media/tags');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          const tagList = document.getElementById('tagList');
+          const tagCheckboxes = document.getElementById('tagCheckboxes');
+          const filterTags = document.getElementById('filterTags');
+          
+          tagList.innerHTML = '';
+          tagCheckboxes.innerHTML = '';
+          filterTags.innerHTML = '';
+          
+          data.tags.forEach(tag => {
+            // Add to list with delete button
+            const div = document.createElement('div');
+            div.style.cssText = 'display: flex; justify-content: space-between; padding: 0.5em; background: rgba(255,0,255,0.1); margin-bottom: 0.5em; border-radius: 3px;';
+            div.innerHTML = `
+              <span>${tag}</span>
+              <button onclick="deleteTag('${tag}')" style="padding: 0.2em 0.5em; background: #f00;">❌</button>
+            `;
+            tagList.appendChild(div);
+            
+            // Add to checkboxes
+            const label = document.createElement('label');
+            label.style.display = 'block';
+            label.style.marginBottom = '0.5em';
+            label.innerHTML = `<input type="checkbox" value="${tag}"> ${tag}`;
+            tagCheckboxes.appendChild(label);
+            
+            // Add to filter
+            const option = document.createElement('option');
+            option.value = tag;
+            option.textContent = tag;
+            filterTags.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Error loading tags:', error);
+      }
+    }
+    
+    async function addTag() {
+      const name = document.getElementById('tagName').value.trim();
+      if (!name) {
+        showStatus('tagStatus', 'Please enter a tag name', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/media/tags', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({tag: name})
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success' || data.status === 'exists') {
+          showStatus('tagStatus', `Tag "${name}" added`, 'success');
+          document.getElementById('tagName').value = '';
+          loadTags();
+        } else {
+          showStatus('tagStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('tagStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    async function deleteTag(tag) {
+      if (!confirm(`Delete tag "${tag}"?`)) return;
+      
+      try {
+        const response = await fetch('/api/media/tags', {
+          method: 'DELETE',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({tag})
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('tagStatus', `Tag "${tag}" deleted`, 'success');
+          loadTags();
+        }
+      } catch (error) {
+        showStatus('tagStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    // Playlists
+    async function loadPlaylists() {
+      try {
+        const response = await fetch('/api/media/playlists');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          const playlistList = document.getElementById('playlistList');
+          const organizePlaylist = document.getElementById('organizePlaylist');
+          
+          playlistList.innerHTML = '';
+          organizePlaylist.innerHTML = '<option value="">-- Select playlist --</option>';
+          
+          data.playlists.forEach(playlist => {
+            const div = document.createElement('div');
+            div.style.cssText = 'padding: 1em; background: rgba(255,0,255,0.1); margin-bottom: 0.5em; border-radius: 5px; border: 1px solid #f0f;';
+            div.innerHTML = `
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong>${playlist.name}</strong>
+                <button onclick="deletePlaylist('${playlist.id}')" style="padding: 0.2em 0.5em; background: #f00;">Delete</button>
+              </div>
+              <div style="font-size: 0.9em; color: #aaa; margin-top: 0.5em;">${playlist.description || 'No description'}</div>
+              <div style="font-size: 0.8em; color: #0ff; margin-top: 0.5em;">${playlist.files.length} files</div>
+            `;
+            playlistList.appendChild(div);
+            
+            organizePlaylist.innerHTML += `<option value="${playlist.id}">${playlist.name}</option>`;
+          });
+        }
+      } catch (error) {
+        console.error('Error loading playlists:', error);
+      }
+    }
+    
+    async function createPlaylist() {
+      const name = document.getElementById('playlistName').value.trim();
+      const description = document.getElementById('playlistDesc').value.trim();
+      
+      if (!name) {
+        showStatus('playlistStatus', 'Please enter a playlist name', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/media/playlists', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({name, description})
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('playlistStatus', `Playlist "${name}" created`, 'success');
+          document.getElementById('playlistName').value = '';
+          document.getElementById('playlistDesc').value = '';
+          loadPlaylists();
+        } else {
+          showStatus('playlistStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('playlistStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    async function deletePlaylist(playlistId) {
+      if (!confirm('Delete this playlist?')) return;
+      
+      try {
+        const response = await fetch(`/api/media/playlists/${playlistId}`, {
+          method: 'DELETE'
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('playlistStatus', 'Playlist deleted', 'success');
+          loadPlaylists();
+        }
+      } catch (error) {
+        showStatus('playlistStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    // File organization
+    async function loadFilesForOrganize() {
+      try {
+        const response = await fetch('/api/media/list?info=true');
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          const select = document.getElementById('organizeFilename');
+          select.innerHTML = '<option value="">-- Select a file --</option>';
+          
+          data.files.forEach(file => {
+            const option = document.createElement('option');
+            option.value = file.filename;
+            option.textContent = `${file.filename} (${file.type})`;
+            select.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Error loading files:', error);
+      }
+    }
+    
+    async function saveFileOrganization() {
+      const filename = document.getElementById('organizeFilename').value;
+      if (!filename) {
+        showStatus('organizeStatus', 'Please select a file', 'error');
+        return;
+      }
+      
+      const category = document.getElementById('organizeCategory').value;
+      const checkboxes = document.querySelectorAll('#tagCheckboxes input[type="checkbox"]');
+      const tags = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+      
+      try {
+        const response = await fetch(`/api/media/files/${encodeURIComponent(filename)}/organize`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({category, add_tags: tags})
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('organizeStatus', 'File organization saved', 'success');
+          showFileInfo(filename, data.metadata);
+        } else {
+          showStatus('organizeStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('organizeStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    async function addFileToPlaylist() {
+      const filename = document.getElementById('organizeFilename').value;
+      const playlistId = document.getElementById('organizePlaylist').value;
+      
+      if (!filename) {
+        showStatus('organizeStatus', 'Please select a file', 'error');
+        return;
+      }
+      
+      if (!playlistId) {
+        showStatus('organizeStatus', 'Please select a playlist', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/media/playlists/${playlistId}/files`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({filename})
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          showStatus('organizeStatus', 'File added to playlist', 'success');
+          loadPlaylists();
+        } else {
+          showStatus('organizeStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('organizeStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    function showFileInfo(filename, metadata) {
+      const div = document.getElementById('currentFileInfo');
+      div.innerHTML = `
+        <h3 style="color: #0ff; margin-bottom: 0.5em;">Current Organization</h3>
+        <p><strong>File:</strong> ${filename}</p>
+        <p><strong>Category:</strong> ${metadata.category || 'None'}</p>
+        <p><strong>Tags:</strong> ${metadata.tags && metadata.tags.length > 0 ? metadata.tags.join(', ') : 'None'}</p>
+      `;
+    }
+    
+    // Search
+    async function searchMedia() {
+      const query = document.getElementById('searchQuery').value.trim();
+      const category = document.getElementById('filterCategory').value;
+      const tags = Array.from(document.getElementById('filterTags').selectedOptions).map(opt => opt.value);
+      
+      try {
+        const params = new URLSearchParams();
+        if (query) params.append('query', query);
+        if (category) params.append('category', category);
+        tags.forEach(tag => params.append('tags', tag));
+        
+        const response = await fetch(`/api/media/search?${params}`);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          const resultsDiv = document.getElementById('searchResults');
+          
+          if (data.results.length === 0) {
+            resultsDiv.innerHTML = '<p>No files found matching your criteria</p>';
+          } else {
+            resultsDiv.innerHTML = `<h3 style="color: #0ff; margin-bottom: 1em;">Found ${data.count} files:</h3>`;
+            
+            data.results.forEach(file => {
+              const div = document.createElement('div');
+              div.style.cssText = 'padding: 1em; background: rgba(0,255,255,0.05); margin-bottom: 0.5em; border-radius: 5px; border: 1px solid #0ff;';
+              div.innerHTML = `
+                <strong>${file.filename}</strong>
+                <div style="font-size: 0.9em; color: #aaa; margin-top: 0.5em;">
+                  ${file.size_mb} MB | ${file.type}
+                  ${file.category ? ` | Category: ${file.category}` : ''}
+                  ${file.tags && file.tags.length > 0 ? ` | Tags: ${file.tags.join(', ')}` : ''}
+                </div>
+              `;
+              resultsDiv.appendChild(div);
+            });
+          }
+          
+          showStatus('searchStatus', `Found ${data.count} files`, 'success');
+        } else {
+          showStatus('searchStatus', 'Error: ' + data.error, 'error');
+        }
+      } catch (error) {
+        showStatus('searchStatus', 'Error: ' + error.message, 'error');
+      }
+    }
+    
+    // Update switchTab to load organize data when switching to that tab
+    const originalSwitchTab = switchTab;
+    switchTab = function(tabName) {
+      originalSwitchTab(tabName);
+      if (tabName === 'organize') {
+        loadOrganizeTab();
+      }
+    };
+    
+    // Load stats on page load
+    window.addEventListener('load', () => {
+      refreshStats();
+    });
+  </script>
+</body>
+</html>

@@ -8,6 +8,7 @@ import os
 import json
 import logging
 import subprocess
+import time
 from datetime import datetime
 from typing import Dict, List, Optional
 import requests
@@ -58,14 +59,35 @@ class OllamaClient:
         
         logger.info(f"Initialized Ollama client with host: {self.host}")
     
-    def check_connection(self) -> bool:
-        """Check if Ollama is accessible."""
-        try:
-            response = requests.get(f"{self.host}/api/tags", timeout=5)
-            return response.status_code == 200
-        except Exception as e:
-            logger.error(f"Failed to connect to Ollama: {e}")
-            return False
+    def check_connection(self, retries: int = 3) -> bool:
+        """
+        Check if Ollama is accessible with retry logic.
+        
+        Args:
+            retries: Number of connection attempts
+            
+        Returns:
+            True if connection successful, False otherwise
+        """
+        for attempt in range(retries):
+            try:
+                response = requests.get(f"{self.host}/api/tags", timeout=5)
+                if response.status_code == 200:
+                    logger.info(f"Successfully connected to Ollama at {self.host}")
+                    return True
+                logger.warning(f"Ollama returned status {response.status_code}")
+            except requests.exceptions.Timeout:
+                logger.warning(f"Connection attempt {attempt + 1}/{retries} timed out")
+            except requests.exceptions.ConnectionError:
+                logger.warning(f"Connection attempt {attempt + 1}/{retries} failed - is Ollama running?")
+            except Exception as e:
+                logger.error(f"Unexpected error checking connection: {e}")
+            
+            if attempt < retries - 1:
+                time.sleep(1)  # Wait 1 second before retry
+        
+        logger.error(f"Failed to connect to Ollama after {retries} attempts at {self.host}")
+        return False
     
     def list_models(self) -> List[str]:
         """List available models."""
@@ -140,7 +162,8 @@ class OllamaClient:
                    f"safety_level={safety_level}, model={model}")
         
         try:
-            # Call Ollama API
+            # Call Ollama API with timeout and error handling
+            logger.info(f"Calling Ollama API with model {model} (this may take 1-2 minutes)...")
             response = requests.post(
                 f"{self.host}/api/generate",
                 json={
@@ -153,7 +176,7 @@ class OllamaClient:
                         "max_tokens": 2000
                     }
                 },
-                timeout=120
+                timeout=180  # Increased timeout for larger models
             )
             
             if response.status_code == 200:
@@ -194,12 +217,26 @@ class OllamaClient:
                 
                 return script_data
             else:
-                logger.error(f"Ollama API error: {response.status_code}")
-                return {"error": f"API returned status {response.status_code}"}
+                error_msg = f"Ollama API error: {response.status_code}"
+                try:
+                    error_detail = response.json()
+                    logger.error(f"{error_msg} - {error_detail}")
+                    return {"error": f"{error_msg}: {error_detail.get('error', 'Unknown error')}"}
+                except:
+                    logger.error(error_msg)
+                    return {"error": error_msg}
                 
+        except requests.exceptions.Timeout:
+            error_msg = "Request timed out. The AI model may be too large or the system is overloaded."
+            logger.error(error_msg)
+            return {"error": error_msg}
+        except requests.exceptions.ConnectionError:
+            error_msg = "Cannot connect to Ollama. Please ensure Ollama is running."
+            logger.error(error_msg)
+            return {"error": error_msg}
         except Exception as e:
-            logger.error(f"Error generating script: {e}")
-            return {"error": str(e)}
+            logger.error(f"Unexpected error generating script: {e}", exc_info=True)
+            return {"error": f"Unexpected error: {str(e)}"}
     
     def _build_prompt(
         self,
