@@ -6,6 +6,7 @@ Defines AI personas and kink themes for script generation.
 
 from typing import Dict, List
 from dataclasses import dataclass
+from functools import lru_cache
 
 
 @dataclass
@@ -287,8 +288,9 @@ def get_safety_level(level: int) -> Dict:
     return SAFETY_LEVELS.get(level, SAFETY_LEVELS[5])
 
 
+@lru_cache(maxsize=1)
 def list_personas() -> List[Dict]:
-    """List all available personas."""
+    """List all available personas (cached)."""
     return [
         {
             "key": key,
@@ -301,8 +303,9 @@ def list_personas() -> List[Dict]:
     ]
 
 
+@lru_cache(maxsize=1)
 def list_kink_zones() -> List[Dict]:
-    """List all available kink zones."""
+    """List all available kink zones (cached)."""
     return [
         {
             "key": key,
@@ -315,8 +318,9 @@ def list_kink_zones() -> List[Dict]:
     ]
 
 
+@lru_cache(maxsize=1)
 def list_models() -> List[Dict]:
-    """List all available uncensored models."""
+    """List all available uncensored models (cached)."""
     return [
         {
             "name": name,

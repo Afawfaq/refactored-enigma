@@ -10,7 +10,6 @@ import os
 import sys
 import logging
 import re
-from functools import lru_cache
 from datetime import datetime, timedelta
 
 # Import AI and persona modules
@@ -36,7 +35,10 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # Security: Add secret key for session management
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', os.urandom(24).hex())
+# In production, always set SECRET_KEY environment variable
+# This default is only for development and changes on restart
+_DEFAULT_DEV_KEY = 'dev-key-change-in-production-' + str(hash(__file__))
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', _DEFAULT_DEV_KEY)
 
 # Security headers
 @app.after_request
@@ -100,7 +102,7 @@ def check_rate_limit(key: str, limit: int = 10, window: int = 60) -> bool:
     _rate_limit_cache[key].append(now)
     return True
 
-def sanitize_input(value: str, pattern: str = r'^[a-zA-Z0-9_\-\.]+$') -> str:
+def sanitize_input(value: str, pattern: str = r'^[a-zA-Z0-9_.\-]+$') -> str:
     """Sanitize input to prevent injection attacks."""
     if not value or not isinstance(value, str):
         return ''
@@ -472,7 +474,6 @@ def stop():
 
 
 @app.route('/api/personas')
-@lru_cache(maxsize=1)
 def api_personas():
     """API endpoint to get available personas."""
     try:
@@ -488,7 +489,6 @@ def api_personas():
 
 
 @app.route('/api/kink-zones')
-@lru_cache(maxsize=1)
 def api_kink_zones():
     """API endpoint to get available kink zones."""
     try:
@@ -504,7 +504,6 @@ def api_kink_zones():
 
 
 @app.route('/api/models')
-@lru_cache(maxsize=1)
 def api_models():
     """API endpoint to get available AI models."""
     try:
