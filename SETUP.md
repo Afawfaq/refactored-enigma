@@ -81,31 +81,49 @@ The HTML consent page requires explicit user action before any media loads. It d
 
 ### Automated Setup (Recommended)
 
-**For Ubuntu 25.04:**
+> **📦 Need direct download links?** See [QUICK-INSTALL.md](QUICK-INSTALL.md) for all resource URLs.
+
+**For Ubuntu (Native or WSL):**
 ```bash
 # Clone the repository
 git clone https://github.com/Afawfaq/refactored-enigma.git
 cd refactored-enigma
 
 # Run automated setup (auto-installs Python 3, pip, git, Docker, and more)
+# Works on both native Ubuntu and WSL Ubuntu
 bash ubuntu-setup.sh
 
 # Log out and back in for group membership, then start the service
 docker compose up -d
 ```
 
-**For Windows:**
+**The ubuntu-setup.sh script automatically:**
+- ✅ Detects if running in WSL or native Ubuntu
+- ✅ Installs Python 3, pip, git, curl, wget (if missing)
+- ✅ Installs Docker (native package for Ubuntu, or Docker Engine for WSL)
+- ✅ Installs media libraries (mpv, feh, etc.)
+- ✅ Installs ROCm for AMD GPUs (if detected and not in WSL)
+- ✅ Creates all required directories
+- ✅ Sets up environment configuration
+
+**For Windows with WSL (Recommended):**
 ```powershell
-# Clone the repository
-git clone https://github.com/Afawfaq/refactored-enigma.git
-cd refactored-enigma
-
-# Run automated setup as Administrator (auto-installs Python 3, git using winget)
-# Right-click PowerShell and select "Run as Administrator", then run:
+# Run as Administrator - Auto-installs WSL Ubuntu and all dependencies
 powershell -ExecutionPolicy Bypass -File windows-setup.ps1
+```
 
-# Start the service
-docker compose -f docker-compose.windows.yml up -d
+**The windows-setup.ps1 script automatically:**
+- ✅ Installs WSL with Ubuntu distribution (if not present)
+- ✅ Installs Python 3 and git (via winget if available)
+- ✅ Verifies Docker Desktop is installed
+- ✅ Runs ubuntu-setup.sh inside WSL Ubuntu to complete setup
+- ✅ Configures environment for WSL integration
+
+**After Windows setup, you can run from WSL Ubuntu:**
+```bash
+# Open Ubuntu from Start menu
+cd /mnt/c/Users/YourUsername/path/to/refactored-enigma
+docker compose up -d
 ```
 
 ### Manual Install

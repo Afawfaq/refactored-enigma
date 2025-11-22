@@ -42,6 +42,8 @@ This tool is designed for **consenting adults** exploring hypnotic experiences p
 
 ## 🚀 Quick Start
 
+> **📦 Need manual installation links?** See [QUICK-INSTALL.md](QUICK-INSTALL.md) for direct download links to all required resources.
+
 ### For Ubuntu 25.04 Users (Recommended)
 
 ```bash
@@ -102,34 +104,25 @@ docker compose up -d
 # Open http://localhost:9999 in your browser
 ```
 
-### For Windows Users
+### For Windows Users with WSL Ubuntu (Recommended)
 
 ```powershell
-# Clone the repository
-git clone https://github.com/Afawfaq/refactored-enigma.git
-cd refactored-enigma
-
-# Run automated setup as Administrator (auto-installs Python 3, git using winget)
-# Right-click PowerShell and select "Run as Administrator", then run:
+# Run as Administrator - This auto-installs WSL, Ubuntu, Docker, and all dependencies
 powershell -ExecutionPolicy Bypass -File windows-setup.ps1
-
-# Start the service
-docker compose -f docker-compose.windows.yml up -d
-
-# Access at http://localhost:9999
 ```
 
-**The setup script automatically installs (if missing and run as Administrator):**
-- Python 3 and pip (via winget)
-- git (via winget)
-- Checks for Docker Desktop and Docker Compose
-- Creates required directory structure
+**The Windows setup script automatically:**
+- ✅ Installs WSL with Ubuntu (if not present)
+- ✅ Installs Docker Desktop with WSL integration
+- ✅ Runs `ubuntu-setup.sh` inside WSL to install all dependencies
+- ✅ Configures everything for you
 
-**Note:** Run PowerShell as Administrator for automatic installation. Without admin rights, the script will provide manual installation guidance.
+```
 
 **📖 See [WINDOWS-SETUP.md](WINDOWS-SETUP.md) for complete Windows guide including:**
-- Docker Desktop and WSL2 setup
-- Windows-specific configuration
+- Manual WSL setup steps
+- Docker Desktop configuration
+- Troubleshooting tips
 - Troubleshooting common Windows issues
 - Performance optimization tips
 
