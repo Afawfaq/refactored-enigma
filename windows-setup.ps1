@@ -48,6 +48,8 @@ try {
     if ($wingetAvailable -and $isAdmin) {
         Write-Host "Attempting to install Python 3 using winget..." -ForegroundColor Cyan
         try {
+            # Install latest Python 3.x (3.12 is stable and widely used as of 2024)
+            # Using 3.12 specifically ensures compatibility with the project requirements
             winget install --id Python.Python.3.12 --silent --accept-package-agreements --accept-source-agreements
             Write-Host "Python 3 installed successfully!" -ForegroundColor Green
             Write-Host "Note: You may need to restart PowerShell for PATH changes to take effect" -ForegroundColor Yellow
@@ -78,10 +80,11 @@ try {
     $pipVersion = pip --version 2>&1
     Write-Host "pip found: $pipVersion" -ForegroundColor Gray
 } catch {
-    Write-Host "pip not found - it should come with Python installation" -ForegroundColor Yellow
-    if ($pythonInstalled) {
-        Write-Host "You may need to reinstall Python with pip enabled" -ForegroundColor Yellow
-    }
+    Write-Host "pip not found" -ForegroundColor Yellow
+    # pip comes with modern Python installations by default
+    # If Python was just installed, user may need to restart PowerShell for PATH updates
+    Write-Host "pip should come with Python installation. If Python was just installed, restart PowerShell." -ForegroundColor Yellow
+    Write-Host "Otherwise, you may need to reinstall Python with pip enabled" -ForegroundColor Yellow
 }
 
 # Check and install git
