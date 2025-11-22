@@ -178,6 +178,7 @@ def main():
     results.append(check_file_exists(".env.example", "Environment template"))
     results.append(check_file_exists(".gitignore", "Git ignore file"))
     results.append(check_file_exists("requirements.txt", "Requirements file"))
+    results.append(check_file_exists("LICENSE", "License file"))
     
     # Check test files
     print(f"\n{BLUE}Checking Test Files...{RESET}")
