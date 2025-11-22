@@ -586,7 +586,15 @@ class MediaDownloader:
                 if media_type == "image":
                     result = self.download_images([url], metadata=metadata)
                 elif media_type == "video":
-                    if "youtube.com" in url or "youtu.be" in url:
+                    # Check if URL is a YouTube URL (more secure check)
+                    from urllib.parse import urlparse
+                    parsed = urlparse(url)
+                    is_youtube = (
+                        parsed.netloc in ['www.youtube.com', 'youtube.com', 'youtu.be', 'm.youtube.com'] or
+                        parsed.netloc.endswith('.youtube.com')
+                    )
+                    
+                    if is_youtube:
                         success = self.download_youtube_video(url)
                         result = {"success": 1 if success else 0, "failed": 0 if success else 1}
                     else:
