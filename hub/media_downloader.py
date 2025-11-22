@@ -52,13 +52,15 @@ class MediaDownloader:
     VIDEO_FORMATS = ['.mp4', '.mkv', '.webm', '.avi', '.mov', '.flv', '.wmv']
     AUDIO_FORMATS = ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac']
     
-    def __init__(self, media_dir: str = "/home/beta/hub/media"):
+    def __init__(self, media_dir: str = None):
         """
         Initialize media downloader with advanced features.
         
         Args:
-            media_dir: Base directory for media files
+            media_dir: Base directory for media files (default: from env or /home/beta/hub/media)
         """
+        if media_dir is None:
+            media_dir = os.getenv('MEDIA_DIR', '/home/beta/hub/media')
         self.media_dir = media_dir
         self.video_dir = os.path.join(media_dir, "video")
         self.img_dir = os.path.join(media_dir, "img")
@@ -522,11 +524,14 @@ class MediaDownloader:
             file_hash = self._get_file_hash(url)
             output_template = os.path.join(self.video_dir, f"{file_hash}.%(ext)s")
             
+            # Parse quality (handle '720p' or '720')
+            quality_num = quality.rstrip('p') if quality.endswith('p') else quality
+            
             # Download video
             logger.info(f"Downloading YouTube video: {url}")
             cmd = [
                 "yt-dlp",
-                "-f", f"bestvideo[height<={quality[:-1]}]+bestaudio/best[height<={quality[:-1]}]",
+                "-f", f"bestvideo[height<={quality_num}]+bestaudio/best[height<={quality_num}]",
                 "--merge-output-format", "mp4",
                 "-o", output_template,
                 "--no-playlist",
@@ -687,9 +692,13 @@ class MediaDownloader:
             
             output_path = os.path.splitext(input_path)[0] + f".{output_format}"
             
+            # Convert quality (1-100) to ffmpeg scale (2-31, lower is better)
+            # quality 100 -> 2 (best), quality 1 -> 31 (worst)
+            ffmpeg_quality = max(2, min(31, int(31 - (quality / 100 * 29))))
+            
             cmd = [
                 "ffmpeg", "-i", input_path,
-                "-q:v", str(100 - quality),
+                "-q:v", str(ffmpeg_quality),
                 "-y", output_path
             ]
             
@@ -739,10 +748,13 @@ class MediaDownloader:
                 
                 temp_path = os.path.join(self.temp_dir, filename)
                 
+                # Convert quality (1-100) to ffmpeg scale (2-31, lower is better)
+                ffmpeg_quality = max(2, min(31, int(31 - (quality / 100 * 29))))
+                
                 cmd = [
                     "ffmpeg", "-i", input_path,
-                    "-vf", f"scale='min({max_dimension},iw)':min'({max_dimension},ih)':force_original_aspect_ratio=decrease",
-                    "-q:v", str(100 - quality),
+                    "-vf", f"scale='min({max_dimension},iw)':'min({max_dimension},ih)':force_original_aspect_ratio=decrease",
+                    "-q:v", str(ffmpeg_quality),
                     "-y", temp_path
                 ]
                 

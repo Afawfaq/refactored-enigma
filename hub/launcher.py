@@ -30,7 +30,6 @@ try:
     from media_downloader import MediaDownloader
 except ImportError:
     MediaDownloader = None
-    logger.warning("MediaDownloader not available")
 
 # Configure logging
 logging.basicConfig(
