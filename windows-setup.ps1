@@ -16,8 +16,56 @@ if (-not $isAdmin) {
     }
 }
 
+# Check for Python 3
+Write-Host "[1/8] Checking for Python 3..." -ForegroundColor Green
+try {
+    $pythonVersion = python --version 2>&1
+    if ($pythonVersion -match "Python 3") {
+        Write-Host "Python found: $pythonVersion" -ForegroundColor Gray
+    } else {
+        throw "Python 3 not found"
+    }
+} catch {
+    Write-Host "Python 3 not found!" -ForegroundColor Yellow
+    Write-Host "Python is required to run validation scripts and utilities." -ForegroundColor Yellow
+    Write-Host "" -ForegroundColor Yellow
+    Write-Host "To install Python 3:" -ForegroundColor Cyan
+    Write-Host "1. Download from: https://www.python.org/downloads/" -ForegroundColor White
+    Write-Host "2. Run the installer and CHECK 'Add Python to PATH'" -ForegroundColor White
+    Write-Host "3. After installation, restart PowerShell and run this script again" -ForegroundColor White
+    Write-Host "" -ForegroundColor Yellow
+    $installPython = Read-Host "Continue without Python? (y/N)"
+    if ($installPython -notmatch '^[Yy]$') {
+        Write-Host "Exiting. Please install Python and run this script again." -ForegroundColor Yellow
+        exit 1
+    }
+    Write-Host "Continuing without Python - some features may not work" -ForegroundColor Yellow
+}
+
+# Check for pip
+Write-Host "[2/8] Checking for pip..." -ForegroundColor Green
+try {
+    $pipVersion = pip --version 2>&1
+    Write-Host "pip found: $pipVersion" -ForegroundColor Gray
+} catch {
+    Write-Host "pip not found - it should come with Python installation" -ForegroundColor Yellow
+    Write-Host "You may need to reinstall Python with pip enabled" -ForegroundColor Yellow
+}
+
+# Check for git
+Write-Host "[3/8] Checking for git..." -ForegroundColor Green
+try {
+    $gitVersion = git --version 2>&1
+    Write-Host "git found: $gitVersion" -ForegroundColor Gray
+} catch {
+    Write-Host "git not found!" -ForegroundColor Yellow
+    Write-Host "Git is useful for version control and updates." -ForegroundColor Yellow
+    Write-Host "Download from: https://git-scm.com/download/win" -ForegroundColor White
+    Write-Host "Continuing without git..." -ForegroundColor Yellow
+}
+
 # Check for Docker Desktop
-Write-Host "[1/6] Checking for Docker Desktop..." -ForegroundColor Green
+Write-Host "[4/8] Checking for Docker Desktop..." -ForegroundColor Green
 try {
     $dockerVersion = docker --version
     Write-Host "Docker found: $dockerVersion" -ForegroundColor Gray
@@ -29,7 +77,7 @@ try {
 }
 
 # Check Docker Compose
-Write-Host "[2/6] Checking for Docker Compose..." -ForegroundColor Green
+Write-Host "[5/8] Checking for Docker Compose..." -ForegroundColor Green
 try {
     $composeVersion = docker compose version
     Write-Host "Docker Compose found: $composeVersion" -ForegroundColor Gray
@@ -41,7 +89,7 @@ try {
 }
 
 # Create project directories
-Write-Host "[3/6] Creating project directories..." -ForegroundColor Green
+Write-Host "[6/8] Creating project directories..." -ForegroundColor Green
 $directories = @(
     "hub\media\video",
     "hub\media\img",
@@ -60,7 +108,7 @@ foreach ($dir in $directories) {
 Write-Host "Directories created successfully" -ForegroundColor Gray
 
 # Set up environment file
-Write-Host "[4/6] Creating environment configuration..." -ForegroundColor Green
+Write-Host "[7/8] Creating environment configuration..." -ForegroundColor Green
 if (-not (Test-Path ".env")) {
     Copy-Item ".env.example" ".env"
     Write-Host "Created .env file - please review and customize" -ForegroundColor Gray
@@ -69,7 +117,6 @@ if (-not (Test-Path ".env")) {
 }
 
 # Update .env for Windows
-Write-Host "[5/6] Updating .env for Windows..." -ForegroundColor Green
 if (Test-Path ".env") {
     $envContent = Get-Content ".env" -Raw
     # Use host.docker.internal for Ollama on Windows
@@ -82,7 +129,7 @@ if (Test-Path ".env") {
 }
 
 # Build Docker image
-Write-Host "[6/6] Building Docker image..." -ForegroundColor Green
+Write-Host "[8/8] Building Docker image..." -ForegroundColor Green
 docker compose -f docker-compose.windows.yml build
 
 if ($LASTEXITCODE -eq 0) {
