@@ -154,6 +154,7 @@ ollama pull llama3.1:8b
 
 - **[Ubuntu 25.04 Setup Guide](UBUNTU-25.04-SETUP.md)** - Comprehensive Ubuntu 25.04 installation, GPU passthrough, and optimization
 - **[Windows Setup Guide](WINDOWS-SETUP.md)** - Complete Windows installation and configuration guide
+- **[Windows AMD GPU Setup](WINDOWS-AMD-GPU-SETUP.md)** - 🆕 AMD RX 7800 XT setup with ROCm, DirectML, ComfyUI, and Ollama on Windows 11
 - **[Complete Setup Guide](SETUP.md)** - Detailed installation and configuration for all platforms
 - **[Media Downloader Guide](MEDIA-DOWNLOADER.md)** - Automatic media discovery and download from the internet
 - **[Improvements Documentation](IMPROVEMENTS.md)** - Recent security, UX, and performance improvements
