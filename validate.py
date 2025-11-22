@@ -169,6 +169,7 @@ def main():
     print(f"\n{BLUE}Checking Documentation...{RESET}")
     results.append(check_file_exists("README.md", "README"))
     results.append(check_file_exists("SETUP.md", "Setup guide"))
+    results.append(check_file_exists("WINDOWS-SETUP.md", "Windows setup guide"))
     results.append(check_file_exists("IMPLEMENTATION.md", "Implementation summary"))
     results.append(check_file_exists("UNCENSORED-MODELS.md", "Uncensored models guide"))
     results.append(check_file_exists("TESTING.md", "Testing guide"))
@@ -179,6 +180,9 @@ def main():
     results.append(check_file_exists(".gitignore", "Git ignore file"))
     results.append(check_file_exists("requirements.txt", "Requirements file"))
     results.append(check_file_exists("LICENSE", "License file"))
+    results.append(check_file_exists("docker-compose.windows.yml", "Windows Docker Compose"))
+    results.append(check_file_exists("windows-setup.ps1", "Windows setup script"))
+    results.append(check_file_exists("ubuntu-setup.sh", "Ubuntu setup script"))
     
     # Check test files
     print(f"\n{BLUE}Checking Test Files...{RESET}")

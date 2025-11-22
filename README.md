@@ -5,6 +5,7 @@
 ![Docker](https://img.shields.io/badge/docker-required-blue)
 ![Python](https://img.shields.io/badge/python-3.13-brightgreen)
 ![Ubuntu](https://img.shields.io/badge/ubuntu-25.04%20optimized-orange)
+![Windows](https://img.shields.io/badge/windows-compatible-blue)
 
 A **privacy-first, containerized platform** for creating and experiencing personalized, consensual hypnotic sessions. Combines AI-generated content with synchronized multimedia playback in a fully isolated, offline environment.
 
@@ -94,8 +95,33 @@ docker compose up -d
 # Open http://localhost:9999 in your browser
 ```
 
+### For Windows Users
+
+```powershell
+# Clone the repository
+git clone https://github.com/Afawfaq/refactored-enigma.git
+cd refactored-enigma
+
+# Run automated setup
+powershell -ExecutionPolicy Bypass -File windows-setup.ps1
+
+# Start the service
+docker compose -f docker-compose.windows.yml up -d
+
+# Access at http://localhost:9999
+```
+
+**📖 See [WINDOWS-SETUP.md](WINDOWS-SETUP.md) for complete Windows guide including:**
+- Docker Desktop and WSL2 setup
+- Windows-specific configuration
+- Troubleshooting common Windows issues
+- Performance optimization tips
+
+**Recommended:** Use WSL2 with Docker Desktop for best compatibility.
+
 ### With Ollama (AI Features)
 
+**Linux:**
 ```bash
 # On host machine:
 curl -fsSL https://ollama.com/install.sh | sh
@@ -105,9 +131,17 @@ ollama pull llama3.1:8b
 # The Docker container will automatically connect to Ollama
 ```
 
+**Windows:**
+```powershell
+# Download and install from: https://ollama.ai/download/windows
+# Then pull a model:
+ollama pull llama3.1:8b
+```
+
 ## 📖 Documentation
 
 - **[Ubuntu 25.04 Setup Guide](UBUNTU-25.04-SETUP.md)** - Comprehensive Ubuntu 25.04 installation, GPU passthrough, and optimization
+- **[Windows Setup Guide](WINDOWS-SETUP.md)** - Complete Windows installation and configuration guide
 - **[Complete Setup Guide](SETUP.md)** - Detailed installation and configuration for all platforms
 - **Architecture** - See SETUP.md for technical details
 - **Troubleshooting** - Platform-specific guides in respective documentation

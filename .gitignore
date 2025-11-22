@@ -33,6 +33,10 @@ hub/scripts/*.json
 .DS_Store
 Thumbs.db
 *~
+# Windows
+desktop.ini
+$RECYCLE.BIN/
+*.lnk
 
 # IDE
 .vscode/
