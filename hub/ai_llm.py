@@ -8,6 +8,7 @@ import os
 import json
 import logging
 import subprocess
+import time
 from datetime import datetime
 from typing import Dict, List, Optional
 import requests
@@ -83,7 +84,6 @@ class OllamaClient:
                 logger.error(f"Unexpected error checking connection: {e}")
             
             if attempt < retries - 1:
-                import time
                 time.sleep(1)  # Wait 1 second before retry
         
         logger.error(f"Failed to connect to Ollama after {retries} attempts at {self.host}")

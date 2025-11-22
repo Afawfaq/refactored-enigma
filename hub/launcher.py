@@ -36,9 +36,12 @@ app = Flask(__name__)
 
 # Security: Add secret key for session management
 # In production, always set SECRET_KEY environment variable
-# This default is only for development and changes on restart
-_DEFAULT_DEV_KEY = 'dev-key-change-in-production-' + str(hash(__file__))
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', _DEFAULT_DEV_KEY)
+import secrets
+_DEFAULT_DEV_KEY = os.getenv('SECRET_KEY')
+if not _DEFAULT_DEV_KEY:
+    logger.warning("SECRET_KEY not set - using random key (sessions will not persist across restarts)")
+    _DEFAULT_DEV_KEY = secrets.token_hex(32)
+app.config['SECRET_KEY'] = _DEFAULT_DEV_KEY
 
 # Security headers
 @app.after_request
@@ -102,7 +105,7 @@ def check_rate_limit(key: str, limit: int = 10, window: int = 60) -> bool:
     _rate_limit_cache[key].append(now)
     return True
 
-def sanitize_input(value: str, pattern: str = r'^[a-zA-Z0-9_.\-]+$') -> str:
+def sanitize_input(value: str, pattern: str = r'^[a-zA-Z0-9_.-]+$') -> str:
     """Sanitize input to prevent injection attacks."""
     if not value or not isinstance(value, str):
         return ''
@@ -183,7 +186,7 @@ def configure_session():
             kink_zones = ['relaxation']
         
         # Sanitize and validate model
-        model = sanitize_input(model_raw, r'^[a-zA-Z0-9\-\.:]+$')
+        model = sanitize_input(model_raw, r'^[a-zA-Z0-9.:+-]+$')
         if not model or model not in UNCENSORED_MODELS:
             logger.warning(f"Invalid model '{model_raw}', using default")
             model = 'dolphin-llama3:8b'
