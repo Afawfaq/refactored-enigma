@@ -196,10 +196,12 @@ ollama run llama3.2:3b
 # Set GPU override for RDNA3
 $env:HSA_OVERRIDE_GFX_VERSION = "11.0.0"
 
-# Install community script (use at your own risk)
+# ⚠️ Community script (experimental, use at your own risk)
+# Review the script contents before running:
 git clone https://github.com/sunfish4951/Install-Ollama-with-AMD-Support-on-Windows.git
 cd Install-Ollama-with-AMD-Support-on-Windows
-.\install.ps1
+# IMPORTANT: Review install.ps1 contents first, then run:
+# .\install.ps1
 ```
 
 ### Option 3: Linux VM/Dual Boot (RECOMMENDED)
@@ -516,7 +518,7 @@ ollama pull llama3.2:3b-q4_0  # 4-bit quantized
 - [Ollama Documentation](https://github.com/ollama/ollama)
 
 ### Community Resources
-- [ComfyUI AMD Guide](https://atlassc.net/2025/01/15/installing-comfyui-on-windows-for-amd-gpus)
+- [ComfyUI AMD Guide](https://www.kombitz.com/2023/11/14/how-to-install-comfyui-on-windows-with-amd-gpu-using-pytorch-directml/)
 - [ROCm GitHub Discussions](https://github.com/ROCm/ROCm/discussions)
 - [AMD GPU AI Community](https://www.reddit.com/r/LocalLLaMA/)
 
@@ -558,7 +560,7 @@ For questions or issues, check the [Hypno-Hub repository](https://github.com/Afa
 
 ---
 
-**Last Updated**: January 2025  
+**Document Version**: 1.0  
 **GPU Tested**: AMD Radeon RX 7800 XT  
 **OS**: Windows 11 23H2/24H2  
 **ROCm Version**: 6.2-6.4  
