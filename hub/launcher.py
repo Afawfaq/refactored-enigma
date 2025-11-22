@@ -67,12 +67,30 @@ def configure():
 def configure_session():
     """Handle configuration form submission and generate AI script."""
     try:
-        # Get form data
+        # Get form data with validation
         persona = request.form.get('persona', 'gentle_guide')
         kink_zones = request.form.get('kink_zone', 'relaxation').split(',')
         model = request.form.get('model', 'dolphin-llama3:8b')
-        safety_level = int(request.form.get('safety_level', 3))
-        duration = int(request.form.get('duration', 20))
+        
+        # Validate and parse safety level (1-5)
+        try:
+            safety_level = int(request.form.get('safety_level', 3))
+            if not 1 <= safety_level <= 5:
+                logger.warning(f"Invalid safety level {safety_level}, using default 3")
+                safety_level = 3
+        except (ValueError, TypeError):
+            logger.warning("Invalid safety level format, using default 3")
+            safety_level = 3
+        
+        # Validate and parse duration (5-120 minutes)
+        try:
+            duration = int(request.form.get('duration', 20))
+            if not 5 <= duration <= 120:
+                logger.warning(f"Invalid duration {duration}, using default 20")
+                duration = 20
+        except (ValueError, TypeError):
+            logger.warning("Invalid duration format, using default 20")
+            duration = 20
         
         logger.info(f"Generating script: persona={persona}, zones={kink_zones}, "
                    f"model={model}, safety={safety_level}, duration={duration}")

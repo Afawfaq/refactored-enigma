@@ -1,0 +1,13 @@
+# Hypno-Hub Python Dependencies
+# Core web framework
+flask>=3.0.0
+
+# HTTP requests for Ollama integration
+requests>=2.31.0
+
+# PyTorch for potential future ML features
+# Currently optional - the Dockerfile installs these in the container
+# Uncomment to install locally for development:
+# torch>=2.1.0      # Deep learning framework (large package ~800MB)
+# torchvision>=0.16.0  # Computer vision utilities
+# torchaudio>=2.1.0    # Audio processing utilities

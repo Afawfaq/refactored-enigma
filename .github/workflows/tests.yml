@@ -1,0 +1,44 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop, 'feature/**', 'copilot/**' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run validation
+      run: python validate.py
+    
+    - name: Run persona tests
+      run: python test_personas.py
+    
+    - name: Run AI/LLM tests
+      run: python test_ai_llm.py
+    
+    - name: Verify Python syntax
+      run: |
+        python -m py_compile hub/launcher.py
+        python -m py_compile hub/ai_llm.py
+        python -m py_compile hub/personas.py
+    
+    - name: Check Docker configuration
+      run: docker compose config
