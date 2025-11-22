@@ -9,13 +9,19 @@ import subprocess
 import os
 import sys
 import logging
+import re
+from functools import lru_cache
+from datetime import datetime, timedelta
 
 # Import AI and persona modules
 try:
     from ai_llm import OllamaClient
-    from personas import list_personas, list_kink_zones, list_models
+    from personas import list_personas, list_kink_zones, list_models, PERSONAS, KINK_ZONES, UNCENSORED_MODELS
 except ImportError:
     OllamaClient = None
+    PERSONAS = {}
+    KINK_ZONES = {}
+    UNCENSORED_MODELS = {}
     def list_personas(): return []
     def list_kink_zones(): return []
     def list_models(): return []
@@ -28,6 +34,57 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Security: Add secret key for session management
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', os.urandom(24).hex())
+
+# Security headers
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to all responses."""
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    # Note: Not adding CSP as it might interfere with inline scripts
+    return response
+
+# Rate limiting state (simple in-memory)
+_rate_limit_cache = {}
+
+def check_rate_limit(key: str, limit: int = 10, window: int = 60) -> bool:
+    """Simple rate limiting check."""
+    now = datetime.now()
+    if key not in _rate_limit_cache:
+        _rate_limit_cache[key] = []
+    
+    # Clean old entries
+    _rate_limit_cache[key] = [
+        ts for ts in _rate_limit_cache[key] 
+        if now - ts < timedelta(seconds=window)
+    ]
+    
+    # Check limit
+    if len(_rate_limit_cache[key]) >= limit:
+        return False
+    
+    _rate_limit_cache[key].append(now)
+    return True
+
+def sanitize_input(value: str, pattern: str = r'^[a-zA-Z0-9_\-\.]+$') -> str:
+    """Sanitize input to prevent injection attacks."""
+    if not value or not isinstance(value, str):
+        return ''
+    
+    # Remove any potentially dangerous characters
+    value = value.strip()
+    
+    # Check against allowed pattern
+    if not re.match(pattern, value):
+        logger.warning(f"Input validation failed for value: {value}")
+        return ''
+    
+    return value
 
 # Get the HTML templates
 CONSENT_HTML_PATH = '/home/beta/hub/consent.html'
@@ -67,10 +124,38 @@ def configure():
 def configure_session():
     """Handle configuration form submission and generate AI script."""
     try:
-        # Get form data with validation
-        persona = request.form.get('persona', 'gentle_guide')
-        kink_zones = request.form.get('kink_zone', 'relaxation').split(',')
-        model = request.form.get('model', 'dolphin-llama3:8b')
+        # Rate limiting
+        client_ip = request.remote_addr
+        if not check_rate_limit(f"configure_{client_ip}", limit=5, window=60):
+            logger.warning(f"Rate limit exceeded for {client_ip}")
+            return jsonify({'error': 'Too many requests. Please wait a moment.'}), 429
+        
+        # Get and validate form data
+        persona_raw = request.form.get('persona', 'gentle_guide')
+        kink_zones_raw = request.form.get('kink_zone', 'relaxation')
+        model_raw = request.form.get('model', 'dolphin-llama3:8b')
+        
+        # Sanitize and validate persona
+        persona = sanitize_input(persona_raw, r'^[a-z_]+$')
+        if not persona or persona not in PERSONAS:
+            logger.warning(f"Invalid persona '{persona_raw}', using default")
+            persona = 'gentle_guide'
+        
+        # Sanitize and validate kink zones
+        kink_zones = []
+        for zone in kink_zones_raw.split(','):
+            zone = sanitize_input(zone.strip(), r'^[a-z_]+$')
+            if zone and zone in KINK_ZONES:
+                kink_zones.append(zone)
+        
+        if not kink_zones:
+            kink_zones = ['relaxation']
+        
+        # Sanitize and validate model
+        model = sanitize_input(model_raw, r'^[a-zA-Z0-9\-\.:]+$')
+        if not model or model not in UNCENSORED_MODELS:
+            logger.warning(f"Invalid model '{model_raw}', using default")
+            model = 'dolphin-llama3:8b'
         
         # Validate and parse safety level (1-5)
         try:
@@ -99,6 +184,12 @@ def configure_session():
         if OllamaClient:
             client = OllamaClient()
             
+            # Check Ollama connection first
+            if not client.check_connection():
+                error_msg = "Unable to connect to Ollama AI service. Please ensure Ollama is running."
+                logger.error(error_msg)
+                return jsonify({'error': error_msg, 'details': 'Check OLLAMA_HOST configuration'}), 503
+            
             # Generate script with first kink zone
             kink_zone = kink_zones[0] if kink_zones else None
             result = client.generate_script(
@@ -111,7 +202,10 @@ def configure_session():
             
             if "error" in result:
                 logger.error(f"Script generation failed: {result['error']}")
-                return f"Error generating script: {result['error']}", 500
+                return jsonify({
+                    'error': 'Failed to generate script',
+                    'details': result['error']
+                }), 500
             
             logger.info(f"Script generated successfully: {result.get('timestamp', 'unknown')}")
         else:
@@ -121,8 +215,11 @@ def configure_session():
         return redirect('/start_configured')
         
     except Exception as e:
-        logger.error(f"Error in configure_session: {e}")
-        return f"Error: {e}", 500
+        logger.error(f"Error in configure_session: {e}", exc_info=True)
+        return jsonify({
+            'error': 'An unexpected error occurred',
+            'details': str(e)
+        }), 500
 
 
 @app.route('/start_configured', methods=['GET', 'POST'])
@@ -194,12 +291,91 @@ def session():
 
 @app.route('/health')
 def health():
-    """Health check endpoint."""
-    return jsonify({
+    """Health check endpoint with detailed status."""
+    health_status = {
         'status': 'healthy',
         'service': 'hypno-hub',
-        'version': '1.0.0'
-    })
+        'version': '1.0.0',
+        'timestamp': datetime.now().isoformat()
+    }
+    
+    # Check Ollama connection
+    if OllamaClient:
+        try:
+            client = OllamaClient()
+            ollama_connected = client.check_connection()
+            health_status['ollama'] = {
+                'connected': ollama_connected,
+                'host': client.host
+            }
+            if ollama_connected:
+                try:
+                    models = client.list_models()
+                    health_status['ollama']['models_available'] = len(models)
+                except:
+                    health_status['ollama']['models_available'] = 0
+        except Exception as e:
+            health_status['ollama'] = {
+                'connected': False,
+                'error': str(e)
+            }
+    else:
+        health_status['ollama'] = {'available': False}
+    
+    # Check file system
+    try:
+        scripts_dir = '/home/beta/hub/scripts'
+        logs_dir = '/home/beta/hub/logs'
+        media_dir = '/home/beta/hub/media'
+        
+        health_status['filesystem'] = {
+            'scripts_writable': os.access(scripts_dir, os.W_OK) if os.path.exists(scripts_dir) else False,
+            'logs_writable': os.access(logs_dir, os.W_OK) if os.path.exists(logs_dir) else False,
+            'media_readable': os.access(media_dir, os.R_OK) if os.path.exists(media_dir) else False
+        }
+    except Exception as e:
+        health_status['filesystem'] = {'error': str(e)}
+    
+    # Overall status
+    overall_healthy = health_status.get('ollama', {}).get('connected', False)
+    health_status['status'] = 'healthy' if overall_healthy else 'degraded'
+    
+    status_code = 200 if overall_healthy else 503
+    return jsonify(health_status), status_code
+
+
+@app.route('/api/status')
+def api_status():
+    """Get current system status."""
+    try:
+        status = {
+            'timestamp': datetime.now().isoformat(),
+            'service': 'hypno-hub',
+            'version': '1.0.0'
+        }
+        
+        # Check if session is running
+        try:
+            mpv_running = subprocess.run(
+                ['pgrep', '-f', 'mpv'],
+                capture_output=True,
+                timeout=2
+            ).returncode == 0
+            
+            feh_running = subprocess.run(
+                ['pgrep', '-f', 'feh'],
+                capture_output=True,
+                timeout=2
+            ).returncode == 0
+            
+            status['session_active'] = mpv_running or feh_running
+        except:
+            status['session_active'] = False
+        
+        return jsonify(status)
+    except Exception as e:
+        logger.error(f"Error getting status: {e}")
+        return jsonify({'error': 'Failed to get status'}), 500
 
 
 @app.route('/api/stop', methods=['POST'])
@@ -216,21 +392,51 @@ def stop():
 
 
 @app.route('/api/personas')
+@lru_cache(maxsize=1)
 def api_personas():
     """API endpoint to get available personas."""
-    return jsonify(list_personas())
+    try:
+        personas = list_personas()
+        return jsonify({
+            'status': 'success',
+            'data': personas,
+            'count': len(personas)
+        })
+    except Exception as e:
+        logger.error(f"Error retrieving personas: {e}")
+        return jsonify({'error': 'Failed to retrieve personas'}), 500
 
 
 @app.route('/api/kink-zones')
+@lru_cache(maxsize=1)
 def api_kink_zones():
     """API endpoint to get available kink zones."""
-    return jsonify(list_kink_zones())
+    try:
+        zones = list_kink_zones()
+        return jsonify({
+            'status': 'success',
+            'data': zones,
+            'count': len(zones)
+        })
+    except Exception as e:
+        logger.error(f"Error retrieving kink zones: {e}")
+        return jsonify({'error': 'Failed to retrieve kink zones'}), 500
 
 
 @app.route('/api/models')
+@lru_cache(maxsize=1)
 def api_models():
     """API endpoint to get available AI models."""
-    return jsonify(list_models())
+    try:
+        models = list_models()
+        return jsonify({
+            'status': 'success',
+            'data': models,
+            'count': len(models)
+        })
+    except Exception as e:
+        logger.error(f"Error retrieving models: {e}")
+        return jsonify({'error': 'Failed to retrieve models'}), 500
 
 
 if __name__ == '__main__':
