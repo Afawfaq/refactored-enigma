@@ -49,7 +49,7 @@ This tool is designed for **consenting adults** exploring hypnotic experiences p
 git clone https://github.com/Afawfaq/refactored-enigma.git
 cd refactored-enigma
 
-# Run automated setup
+# Run automated setup (auto-installs Python 3, pip, git, curl, wget, Docker, and more)
 bash ubuntu-setup.sh
 
 # Log out and back in for group membership
@@ -58,6 +58,13 @@ docker compose up -d
 
 # Access at http://localhost:9999
 ```
+
+**The setup script automatically installs:**
+- Python 3 and pip (if not already installed)
+- git, curl, wget (essential tools)
+- Docker and Docker Compose
+- Media playback libraries (mpv, feh)
+- ROCm for AMD GPUs (if detected)
 
 **📖 See [UBUNTU-25.04-SETUP.md](UBUNTU-25.04-SETUP.md) for complete Ubuntu 25.04 guide including:**
 - ROCm 6.2+ installation for AMD GPUs
@@ -102,7 +109,7 @@ docker compose up -d
 git clone https://github.com/Afawfaq/refactored-enigma.git
 cd refactored-enigma
 
-# Run automated setup
+# Run automated setup (checks for Python 3, pip, git, Docker Desktop)
 powershell -ExecutionPolicy Bypass -File windows-setup.ps1
 
 # Start the service
@@ -110,6 +117,12 @@ docker compose -f docker-compose.windows.yml up -d
 
 # Access at http://localhost:9999
 ```
+
+**The setup script checks for and guides installation of:**
+- Python 3 and pip (provides download links if missing)
+- git (provides download link if missing)
+- Docker Desktop and Docker Compose
+- Creates required directory structure
 
 **📖 See [WINDOWS-SETUP.md](WINDOWS-SETUP.md) for complete Windows guide including:**
 - Docker Desktop and WSL2 setup

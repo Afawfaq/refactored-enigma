@@ -110,6 +110,12 @@ cd refactored-enigma
 powershell -ExecutionPolicy Bypass -File windows-setup.ps1
 ```
 
+**The setup script automatically checks for:**
+- Python 3 and pip (provides installation guidance if missing)
+- git (provides download link if missing)
+- Docker Desktop and Docker Compose
+- Creates directory structure and environment files
+
 3. Or manually set up:
 ```powershell
 # Create directories
