@@ -82,7 +82,7 @@ if (Test-Path ".env") {
 
 # Build Docker image
 Write-Host "[6/6] Building Docker image..." -ForegroundColor Green
-docker compose build
+docker compose -f docker-compose.windows.yml build
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host ""

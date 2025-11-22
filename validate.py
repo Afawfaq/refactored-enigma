@@ -143,8 +143,7 @@ def main():
     results.append(check_file_exists("hub/launcher.py", "Flask launcher"))
     results.append(check_file_exists("hub/ai_llm.py", "AI/LLM integration"))
     results.append(check_file_exists("hub/personas.py", "Persona management"))
-    results.append(check_file_exists("hub/start-hub.sh", "Session manager script (Linux)"))
-    results.append(check_file_exists("hub/start-hub.ps1", "Session manager script (Windows)"))
+    results.append(check_file_exists("hub/start-hub.sh", "Session manager script"))
     results.append(check_file_exists("hub/consent.html", "Consent page"))
     results.append(check_file_exists("hub/configure.html", "Configuration page"))
     

@@ -10,6 +10,8 @@ Hypno-Hub was originally designed for Linux systems but can run on Windows in se
 2. **Docker Desktop on Windows** (Limited) - Web interface only, no GUI media playback
 3. **Native WSL2 Installation** - Full Linux experience on Windows
 
+**Important:** The application runs inside a Linux Docker container on all platforms. The Windows-specific setup scripts (`windows-setup.ps1`) are used only for initial setup on the Windows host. Once running, the container uses Linux tools (bash, mpv, feh) regardless of the host OS.
+
 ## Prerequisites
 
 ### Required Software
