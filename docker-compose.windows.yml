@@ -1,0 +1,59 @@
+version: '3.8'
+
+# Windows-specific Docker Compose configuration
+# Use with: docker compose -f docker-compose.windows.yml up -d
+
+services:
+  hypno-hub:
+    build: .
+    container_name: hypno-hub
+    hostname: hypno-hub
+    
+    volumes:
+      - ./hub:/home/beta/hub
+      # Note: X11 forwarding not available on native Windows Docker
+      # Use WSL2 for better Linux GUI support
+    
+    environment:
+      # Windows doesn't use DISPLAY like Linux
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+      - PATH=/usr/local/bin:/usr/bin:/bin
+      # Log level
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    
+    ports:
+      - "9999:9999"
+    
+    # No GPU devices on native Windows Docker
+    # For GPU support, use WSL2 with GPU passthrough
+    
+    # Use default bridge network for better Windows compatibility
+    # network_mode: "bridge" is the default
+    
+    # Security enhancements
+    privileged: false
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_ADMIN
+    
+    restart: unless-stopped
+    
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    
+    # Resource limits (adjust for your system)
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+
+# Note for Windows users:
+# 1. Docker Desktop must be installed and running
+# 2. WSL2 backend is recommended for better compatibility
+# 3. Media playback will work inside the container, but GUI display requires WSL2
+# 4. For the best experience on Windows, consider:
+#    - Using WSL2 with the standard docker-compose.yml
+#    - Or using this configuration for headless operation (web interface only)

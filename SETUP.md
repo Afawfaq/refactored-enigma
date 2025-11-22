@@ -63,7 +63,7 @@ The HTML consent page requires explicit user action before any media loads. It d
 
 **Required:**
 - Docker 20.10+ and Docker Compose 2.0+
-- Linux system (tested on Debian 12, Ubuntu 22.04)
+- Linux system (tested on Debian 12, Ubuntu 22.04) or Windows 10/11 with WSL2
 - 4GB+ RAM, 10GB+ disk space
 
 **Optional (for GPU acceleration):**
@@ -73,6 +73,10 @@ The HTML consent page requires explicit user action before any media loads. It d
 **Optional (for AI features):**
 - Ollama installed on host machine
 - At least one LLM model pulled (e.g., `llama3.1:8b`)
+
+**For Windows Users:**
+- See [WINDOWS-SETUP.md](WINDOWS-SETUP.md) for detailed Windows installation instructions
+- Docker Desktop for Windows with WSL2 backend recommended
 
 ### Quick Install
 

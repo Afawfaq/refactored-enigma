@@ -9,6 +9,7 @@ import subprocess
 import os
 import sys
 import logging
+import platform
 
 # Import AI and persona modules
 try:
@@ -137,11 +138,16 @@ def start():
     try:
         logger.info("User consented - starting session")
         
-        # Start the hub in the background
-        script_path = '/home/beta/hub/start-hub.sh'
+        # Determine the appropriate script based on platform
+        if platform.system() == 'Windows':
+            script_path = '/home/beta/hub/start-hub.ps1'
+            script_cmd = ['powershell', '-ExecutionPolicy', 'Bypass', '-File', script_path]
+        else:
+            script_path = '/home/beta/hub/start-hub.sh'
+            script_cmd = ['/bin/bash', script_path]
         
         if os.path.exists(script_path):
-            subprocess.Popen(['/bin/bash', script_path])
+            subprocess.Popen(script_cmd)
             logger.info("Session started successfully")
         else:
             logger.error(f"Start script not found at {script_path}")
@@ -206,8 +212,16 @@ def health():
 def stop():
     """API endpoint to stop the session."""
     try:
-        subprocess.run(['pkill', '-f', 'mpv'], check=False)
-        subprocess.run(['pkill', '-f', 'feh'], check=False)
+        if platform.system() == 'Windows':
+            # On Windows, use taskkill to stop processes
+            subprocess.run(['taskkill', '/F', '/IM', 'mpv.exe'], check=False, 
+                          stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+            subprocess.run(['taskkill', '/F', '/IM', 'feh.exe'], check=False,
+                          stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        else:
+            # On Unix-like systems, use pkill
+            subprocess.run(['pkill', '-f', 'mpv'], check=False)
+            subprocess.run(['pkill', '-f', 'feh'], check=False)
         logger.info("Session stopped via API")
         return jsonify({'status': 'stopped'})
     except Exception as e:
