@@ -597,40 +597,6 @@ def api_media_download():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/media/search', methods=['POST'])
-def api_media_search():
-    """Search and download images from APIs."""
-    if not MediaDownloader:
-        return jsonify({'error': 'MediaDownloader not available'}), 503
-    
-    # Rate limiting
-    client_ip = request.remote_addr
-    if not check_rate_limit(f"media_search_{client_ip}", limit=3, window=60):
-        return jsonify({'error': 'Too many search requests'}), 429
-    
-    try:
-        data = request.get_json()
-        query = data.get('query', '')
-        count = min(int(data.get('count', 10)), 50)  # Max 50
-        sources = data.get('sources', ['unsplash', 'pexels', 'pixabay'])
-        
-        if not query:
-            return jsonify({'error': 'No query provided'}), 400
-        
-        downloader = MediaDownloader()
-        result = downloader.search_and_download_images(query, count, sources)
-        
-        return jsonify({
-            'status': 'success',
-            'query': query,
-            'result': result
-        })
-        
-    except Exception as e:
-        logger.error(f"Error searching media: {e}")
-        return jsonify({'error': str(e)}), 500
-
-
 @app.route('/api/media/list')
 def api_media_list():
     """List all media files."""

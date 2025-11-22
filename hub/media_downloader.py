@@ -5,7 +5,6 @@ Automatically downloads images and videos from the internet for use in sessions.
 
 Features:
 - Direct URL downloads for images and videos
-- API integration for Unsplash, Pexels, and Pixabay
 - YouTube video download support (yt-dlp)
 - Batch operations with progress tracking
 - Image format conversion and optimization
@@ -42,11 +41,6 @@ logger = logging.getLogger(__name__)
 class MediaDownloader:
     """Download and manage media files from the internet with advanced features."""
     
-    # API endpoints
-    UNSPLASH_API = "https://api.unsplash.com"
-    PEXELS_API = "https://api.pexels.com/v1"
-    PIXABAY_API = "https://pixabay.com/api"
-    
     # Supported formats
     IMAGE_FORMATS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff']
     VIDEO_FORMATS = ['.mp4', '.mkv', '.webm', '.avi', '.mov', '.flv', '.wmv']
@@ -81,22 +75,11 @@ class MediaDownloader:
         self.cache = self._load_cache()
         self.metadata = self._load_metadata()
         
-        # API keys from environment
-        self.unsplash_key = os.getenv('UNSPLASH_API_KEY')
-        self.pexels_key = os.getenv('PEXELS_API_KEY')
-        self.pixabay_key = os.getenv('PIXABAY_API_KEY')
-        
-        # Rate limiting
-        self.last_request_time = {}
-        self.min_request_interval = 1.0  # seconds between requests
-        
         # Download queue
         self.download_queue = []
         self.download_stats = {"total": 0, "success": 0, "failed": 0, "skipped": 0}
         
         logger.info(f"Initialized MediaDownloader with media_dir: {media_dir}")
-        logger.info(f"API Keys configured: Unsplash={bool(self.unsplash_key)}, "
-                   f"Pexels={bool(self.pexels_key)}, Pixabay={bool(self.pixabay_key)}")
     
     def _load_cache(self) -> Dict:
         """Load download cache from file."""
@@ -304,198 +287,6 @@ class MediaDownloader:
         self._save_cache()
         logger.info(f"Video download stats: {stats}")
         return stats
-    
-    def _rate_limit(self, api_name: str):
-        """Apply rate limiting for API requests."""
-        now = time.time()
-        last_time = self.last_request_time.get(api_name, 0)
-        elapsed = now - last_time
-        
-        if elapsed < self.min_request_interval:
-            sleep_time = self.min_request_interval - elapsed
-            logger.debug(f"Rate limiting {api_name}: sleeping {sleep_time:.2f}s")
-            time.sleep(sleep_time)
-        
-        self.last_request_time[api_name] = time.time()
-    
-    def search_unsplash(self, query: str, count: int = 10, orientation: str = None) -> List[str]:
-        """
-        Search Unsplash for images.
-        
-        Args:
-            query: Search query
-            count: Number of images (max 30 per request)
-            orientation: 'landscape', 'portrait', or 'squarish'
-            
-        Returns:
-            List of image URLs
-        """
-        if not self.unsplash_key:
-            logger.error("UNSPLASH_API_KEY not set")
-            return []
-        
-        self._rate_limit("unsplash")
-        
-        try:
-            params = {
-                "query": query,
-                "per_page": min(count, 30),
-                "client_id": self.unsplash_key
-            }
-            if orientation:
-                params["orientation"] = orientation
-            
-            response = requests.get(
-                f"{self.UNSPLASH_API}/search/photos",
-                params=params,
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                urls = [photo["urls"]["regular"] for photo in data.get("results", [])]
-                logger.info(f"Found {len(urls)} images on Unsplash for '{query}'")
-                return urls
-            else:
-                logger.error(f"Unsplash API error: {response.status_code}")
-                return []
-                
-        except Exception as e:
-            logger.error(f"Error searching Unsplash: {e}")
-            return []
-    
-    def search_pexels(self, query: str, count: int = 10, orientation: str = None) -> List[str]:
-        """
-        Search Pexels for images.
-        
-        Args:
-            query: Search query
-            count: Number of images (max 80 per request)
-            orientation: 'landscape', 'portrait', or 'square'
-            
-        Returns:
-            List of image URLs
-        """
-        if not self.pexels_key:
-            logger.error("PEXELS_API_KEY not set")
-            return []
-        
-        self._rate_limit("pexels")
-        
-        try:
-            params = {
-                "query": query,
-                "per_page": min(count, 80)
-            }
-            if orientation:
-                params["orientation"] = orientation
-            
-            response = requests.get(
-                f"{self.PEXELS_API}/search",
-                params=params,
-                headers={"Authorization": self.pexels_key},
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                urls = [photo["src"]["large"] for photo in data.get("photos", [])]
-                logger.info(f"Found {len(urls)} images on Pexels for '{query}'")
-                return urls
-            else:
-                logger.error(f"Pexels API error: {response.status_code}")
-                return []
-                
-        except Exception as e:
-            logger.error(f"Error searching Pexels: {e}")
-            return []
-    
-    def search_pixabay(self, query: str, count: int = 10, image_type: str = "photo") -> List[str]:
-        """
-        Search Pixabay for images.
-        
-        Args:
-            query: Search query
-            count: Number of images (max 200 per request)
-            image_type: 'all', 'photo', 'illustration', 'vector'
-            
-        Returns:
-            List of image URLs
-        """
-        if not self.pixabay_key:
-            logger.error("PIXABAY_API_KEY not set")
-            return []
-        
-        self._rate_limit("pixabay")
-        
-        try:
-            params = {
-                "key": self.pixabay_key,
-                "q": query,
-                "per_page": min(count, 200),
-                "image_type": image_type,
-                "safesearch": "true"
-            }
-            
-            response = requests.get(
-                self.PIXABAY_API,
-                params=params,
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                urls = [hit["largeImageURL"] for hit in data.get("hits", [])]
-                logger.info(f"Found {len(urls)} images on Pixabay for '{query}'")
-                return urls
-            else:
-                logger.error(f"Pixabay API error: {response.status_code}")
-                return []
-                
-        except Exception as e:
-            logger.error(f"Error searching Pixabay: {e}")
-            return []
-    
-    def search_and_download_images(
-        self, 
-        query: str, 
-        count: int = 10, 
-        sources: List[str] = ["unsplash", "pexels", "pixabay"],
-        orientation: str = None
-    ) -> Dict[str, int]:
-        """
-        Search multiple sources and download images.
-        
-        Args:
-            query: Search query
-            count: Total number of images to download
-            sources: List of sources to search
-            orientation: Image orientation preference
-            
-        Returns:
-            Dictionary with download statistics
-        """
-        all_urls = []
-        per_source = count // len(sources) + 1
-        
-        # Search all sources
-        if "unsplash" in sources:
-            all_urls.extend(self.search_unsplash(query, per_source, orientation))
-        
-        if "pexels" in sources:
-            all_urls.extend(self.search_pexels(query, per_source, orientation))
-        
-        if "pixabay" in sources:
-            all_urls.extend(self.search_pixabay(query, per_source))
-        
-        # Download found images
-        if all_urls:
-            urls_to_download = all_urls[:count]
-            logger.info(f"Downloading {len(urls_to_download)} images for query '{query}'")
-            return self.download_images(urls_to_download, metadata={"query": query, "source": "api"})
-        else:
-            logger.warning(f"No images found for query '{query}'")
-            return {"success": 0, "failed": 0, "skipped": 0}
     
     def download_youtube_video(self, url: str, quality: str = "720p") -> bool:
         """
@@ -986,18 +777,6 @@ def main():
     logger.info(f"Videos: {stats['videos']['count']} files (cached: {stats['videos']['cached']})")
     logger.info(f"Audio: {stats['audio']['count']} files (cached: {stats['audio']['cached']})")
     
-    # Check API keys
-    logger.info("\n=== API Configuration ===")
-    logger.info(f"Unsplash API: {'✓ Configured' if downloader.unsplash_key else '✗ Not configured'}")
-    logger.info(f"Pexels API: {'✓ Configured' if downloader.pexels_key else '✗ Not configured'}")
-    logger.info(f"Pixabay API: {'✓ Configured' if downloader.pixabay_key else '✗ Not configured'}")
-    
-    if not any([downloader.unsplash_key, downloader.pexels_key, downloader.pixabay_key]):
-        logger.info("\nTo enable API features, set environment variables:")
-        logger.info("  export UNSPLASH_API_KEY='your-key'")
-        logger.info("  export PEXELS_API_KEY='your-key'")
-        logger.info("  export PIXABAY_API_KEY='your-key'")
-    
     # List media files
     logger.info("\n=== Media Files ===")
     files = downloader.list_media_files(include_info=True)
@@ -1019,47 +798,40 @@ def main():
     logger.info("      'https://example.com/image2.png'")
     logger.info("  ])")
     
-    logger.info("\n2. Search and download images from APIs:")
-    logger.info("  downloader.search_and_download_images(")
-    logger.info("      query='hypnotic spiral',")
-    logger.info("      count=10,")
-    logger.info("      sources=['unsplash', 'pexels', 'pixabay']")
-    logger.info("  )")
-    
-    logger.info("\n3. Download videos from URLs:")
+    logger.info("\n2. Download videos from URLs:")
     logger.info("  downloader.download_videos([")
     logger.info("      'https://example.com/video1.mp4'")
     logger.info("  ])")
     
-    logger.info("\n4. Download from YouTube:")
+    logger.info("\n3. Download from YouTube:")
     logger.info("  downloader.download_youtube_video(")
     logger.info("      'https://youtube.com/watch?v=...',")
     logger.info("      quality='720p'")
     logger.info("  )")
     
-    logger.info("\n5. Batch download multiple items:")
+    logger.info("\n4. Batch download multiple items:")
     logger.info("  items = [")
     logger.info("      {'url': 'https://...jpg', 'type': 'image'},")
     logger.info("      {'url': 'https://...mp4', 'type': 'video'}")
     logger.info("  ]")
     logger.info("  downloader.batch_download(items)")
     
-    logger.info("\n6. Optimize images:")
+    logger.info("\n5. Optimize images:")
     logger.info("  downloader.optimize_images(max_dimension=1920, quality=85)")
     
-    logger.info("\n7. Generate video thumbnails:")
+    logger.info("\n6. Generate video thumbnails:")
     logger.info("  downloader.generate_thumbnails(size=(320, 180))")
     
-    logger.info("\n8. Find and remove duplicates:")
+    logger.info("\n7. Find and remove duplicates:")
     logger.info("  duplicates = downloader.find_duplicates()")
     logger.info("  downloader.remove_duplicates()")
     
-    logger.info("\n9. Get detailed file info:")
+    logger.info("\n8. Get detailed file info:")
     logger.info("  files = downloader.list_media_files(include_info=True)")
     logger.info("  for file in files:")
     logger.info("      print(file)")
     
-    logger.info("\n10. Clear media:")
+    logger.info("\n9. Clear media:")
     logger.info("  downloader.clear_media('images')  # or 'videos', 'audio', 'all'")
 
 
