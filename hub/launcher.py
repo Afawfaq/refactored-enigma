@@ -295,10 +295,17 @@ def start():
 def media_manager():
     """Serve the media manager page."""
     try:
-        with open('/home/beta/hub/media.html', 'r') as f:
+        # Try current directory first
+        media_html_path = os.path.join(os.path.dirname(__file__), 'media.html')
+        with open(media_html_path, 'r') as f:
             return f.read()
     except FileNotFoundError:
-        return "<h1>Media Manager not found</h1>", 404
+        try:
+            # Fall back to /home/beta/hub/media.html
+            with open('/home/beta/hub/media.html', 'r') as f:
+                return f.read()
+        except FileNotFoundError:
+            return "<h1>Media Manager not found</h1>", 404
 
 
 @app.route('/session')
