@@ -170,6 +170,7 @@ def main():
     results.append(check_file_exists("README.md", "README"))
     results.append(check_file_exists("SETUP.md", "Setup guide"))
     results.append(check_file_exists("WINDOWS-SETUP.md", "Windows setup guide"))
+    results.append(check_file_exists("QUICK-INSTALL.md", "Quick install resources"))
     results.append(check_file_exists("IMPLEMENTATION.md", "Implementation summary"))
     results.append(check_file_exists("UNCENSORED-MODELS.md", "Uncensored models guide"))
     results.append(check_file_exists("TESTING.md", "Testing guide"))

@@ -1,22 +1,44 @@
 #!/bin/bash
 #
-# Ubuntu 25.04 Setup Script for Hypno-Hub
+# Ubuntu Setup Script for Hypno-Hub (Native Ubuntu & WSL)
 # Run with: bash ubuntu-setup.sh
+#
+# This script auto-installs all dependencies for both native Ubuntu and WSL Ubuntu environments
 #
 
 set -e
 
-echo "=== Hypno-Hub Ubuntu 25.04 Setup ==="
+echo "=== Hypno-Hub Ubuntu Setup ==="
 echo ""
 
-# Check Ubuntu version
-if ! grep -q "25.04" /etc/os-release; then
-    echo "Warning: This script is optimized for Ubuntu 25.04"
-    read -p "Continue anyway? (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
+# Detect WSL environment
+IS_WSL=false
+if grep -qEi "(Microsoft|WSL)" /proc/version &> /dev/null; then
+    IS_WSL=true
+    echo "✓ WSL Ubuntu environment detected"
+    echo ""
+elif grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null; then
+    IS_WSL=true
+    echo "✓ WSL Ubuntu environment detected"
+    echo ""
+else
+    echo "✓ Native Ubuntu environment detected"
+    echo ""
+fi
+
+# Check Ubuntu version (allow any version, just warn if not 25.04)
+if ! grep -q "25.04" /etc/os-release 2>/dev/null; then
+    echo "Note: This script is optimized for Ubuntu 25.04 but will work on other versions"
+    if [ "$IS_WSL" = false ]; then
+        read -p "Continue anyway? (y/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
+    else
+        echo "Continuing with WSL Ubuntu setup..."
     fi
+    echo ""
 fi
 
 # Install essential dependencies (Python, git, curl, wget)
@@ -73,27 +95,90 @@ else
     echo "  - All essential dependencies already installed"
 fi
 
-# Install Docker (Ubuntu 25.04 native)
-echo "[2/9] Installing Docker from Ubuntu repositories..."
-sudo apt update
-sudo apt install -y docker.io docker-compose-plugin
+# Install Docker (handle WSL vs native)
+echo "[2/9] Installing Docker..."
+if [ "$IS_WSL" = true ]; then
+    # Check if Docker Desktop is available (recommended for WSL)
+    if command -v docker.exe &> /dev/null || command -v docker &> /dev/null; then
+        echo "  - Docker already available in WSL environment"
+        if command -v docker &> /dev/null; then
+            echo "  - Docker version: $(docker --version)"
+        else
+            echo "  - Docker Desktop (Windows) detected"
+            echo "  - Make sure Docker Desktop has WSL integration enabled"
+        fi
+    else
+        echo "  - Installing Docker Engine for WSL..."
+        sudo apt update
+        
+        # Install prerequisites
+        sudo apt install -y \
+            ca-certificates \
+            gnupg \
+            lsb-release
+        
+        # Add Docker's official GPG key
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        
+        # Set up the repository
+        echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+          $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        
+        # Install Docker Engine
+        sudo apt update
+        sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        
+        # Start Docker service in WSL
+        sudo service docker start
+        
+        echo "  - Docker Engine installed successfully for WSL"
+    fi
+else
+    # Native Ubuntu installation
+    echo "  - Installing Docker from Ubuntu repositories..."
+    sudo apt update
+    sudo apt install -y docker.io docker-compose-plugin
+fi
 
 # Add user to docker group
 echo "[3/9] Adding $USER to docker group..."
-sudo usermod -aG docker $USER
+if ! groups $USER | grep -q docker; then
+    sudo usermod -aG docker $USER
+    echo "  - Added $USER to docker group"
+else
+    echo "  - $USER already in docker group"
+fi
 
 # Install media dependencies
 echo "[4/9] Installing media libraries..."
-sudo apt install -y \
-    mpv \
-    feh \
-    libmpv2 \
-    libdrm-amdgpu1 \
-    mesa-vulkan-drivers \
-    vainfo
+if [ "$IS_WSL" = true ]; then
+    echo "  - Installing media libraries for WSL..."
+    # In WSL, some GPU drivers might not be needed, but we'll install what we can
+    # Install packages individually with proper error handling
+    for pkg in mpv feh libmpv2; do
+        if sudo apt install -y "$pkg" 2>/dev/null; then
+            echo "  - Installed: $pkg"
+        else
+            echo "  - Note: $pkg may not be available in WSL"
+        fi
+    done
+else
+    sudo apt install -y \
+        mpv \
+        feh \
+        libmpv2 \
+        libdrm-amdgpu1 \
+        mesa-vulkan-drivers \
+        vainfo
+fi
 
-# Install ROCm (if AMD GPU detected)
-if lspci | grep -i amd | grep -qi vga; then
+# Install ROCm (if AMD GPU detected and not in WSL)
+if [ "$IS_WSL" = true ]; then
+    echo "[5/9] WSL detected - skipping ROCm installation"
+    echo "  - For GPU support in WSL, ensure Docker Desktop has GPU access enabled"
+elif command -v lspci &> /dev/null && lspci | grep -i amd | grep -qi vga; then
     echo "[5/9] AMD GPU detected, installing ROCm 6.2+..."
     
     # Add ROCm repository
@@ -110,13 +195,15 @@ else
     echo "[5/9] No AMD GPU detected, skipping ROCm installation"
 fi
 
-# Apply system tuning
+# Apply system tuning (skip in WSL)
 echo "[6/9] Applying kernel tuning..."
-if [ -f config/sysctl-hypno-hub.conf ]; then
+if [ "$IS_WSL" = true ]; then
+    echo "  - WSL detected - skipping kernel tuning (managed by Windows)"
+elif [ -f config/sysctl-hypno-hub.conf ]; then
     sudo cp config/sysctl-hypno-hub.conf /etc/sysctl.d/99-hypno-hub.conf
     sudo sysctl --system
 else
-    echo "Warning: config/sysctl-hypno-hub.conf not found"
+    echo "  - Note: config/sysctl-hypno-hub.conf not found, skipping"
 fi
 
 # Create project directories
@@ -136,17 +223,48 @@ fi
 
 # Build Docker image
 echo "[9/9] Building Docker image..."
+if [ "$IS_WSL" = true ]; then
+    # In WSL, we might need to start Docker service first
+    if ! docker info &> /dev/null; then
+        echo "  - Docker not responding, attempting to start service..."
+        
+        # Try to start Docker service (works if Docker Engine is installed in WSL)
+        if command -v service &> /dev/null; then
+            sudo service docker start 2>/dev/null && sleep 2
+        fi
+        
+        # Check again
+        if ! docker info &> /dev/null; then
+            echo "  - Note: Docker may require Docker Desktop with WSL integration enabled"
+            echo "  - Or manually start Docker with: sudo service docker start"
+        fi
+    fi
+fi
+
 docker compose build
 
 echo ""
 echo "=== Setup Complete! ==="
 echo ""
+if [ "$IS_WSL" = true ]; then
+    echo "WSL-specific notes:"
+    echo "  - Docker Desktop WSL integration is recommended for best experience"
+    echo "  - If using Docker Engine in WSL, you may need to start Docker manually: sudo service docker start"
+    echo "  - For GUI features, consider setting up an X server on Windows (e.g., VcXsrv, X410)"
+    echo ""
+fi
 echo "Next steps:"
-echo "1. Log out and log back in for group membership to take effect"
+if [ "$IS_WSL" = false ]; then
+    echo "1. Log out and log back in for group membership to take effect"
+else
+    echo "1. Restart your WSL session (or run 'newgrp docker' to use docker without restart)"
+fi
 echo "2. Add your media files to hub/media/"
 echo "3. (Optional) Install and configure Ollama on host"
 echo "4. Start the service: docker compose up -d"
 echo "5. Access the interface: http://localhost:9999"
 echo ""
-echo "For i3 WM kill-switch, add config/i3-config-snippet.conf to ~/.config/i3/config"
-echo ""
+if [ "$IS_WSL" = false ]; then
+    echo "For i3 WM kill-switch, add config/i3-config-snippet.conf to ~/.config/i3/config"
+    echo ""
+fi
