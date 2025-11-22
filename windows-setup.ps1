@@ -73,8 +73,9 @@ Write-Host "[5/6] Updating .env for Windows..." -ForegroundColor Green
 if (Test-Path ".env") {
     $envContent = Get-Content ".env" -Raw
     # Use host.docker.internal for Ollama on Windows
-    if ($envContent -match "OLLAMA_HOST=") {
-        $envContent = $envContent -replace "OLLAMA_HOST=.*", "OLLAMA_HOST=http://host.docker.internal:11434"
+    # Match only actual OLLAMA_HOST variable assignments
+    if ($envContent -match "^\s*OLLAMA_HOST\s*=") {
+        $envContent = $envContent -replace "^\s*OLLAMA_HOST\s*=.*$", "OLLAMA_HOST=http://host.docker.internal:11434" -replace "(?m)"
     }
     Set-Content ".env" $envContent
     Write-Host "Environment file updated for Windows" -ForegroundColor Gray
