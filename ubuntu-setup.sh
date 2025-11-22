@@ -156,10 +156,14 @@ echo "[4/9] Installing media libraries..."
 if [ "$IS_WSL" = true ]; then
     echo "  - Installing media libraries for WSL..."
     # In WSL, some GPU drivers might not be needed, but we'll install what we can
-    sudo apt install -y \
-        mpv \
-        feh \
-        libmpv2 2>/dev/null || echo "  - Note: Some packages may not be available in WSL"
+    # Install packages individually with proper error handling
+    for pkg in mpv feh libmpv2; do
+        if sudo apt install -y "$pkg" 2>/dev/null; then
+            echo "  - Installed: $pkg"
+        else
+            echo "  - Note: $pkg may not be available in WSL"
+        fi
+    done
 else
     sudo apt install -y \
         mpv \
@@ -222,9 +226,18 @@ echo "[9/9] Building Docker image..."
 if [ "$IS_WSL" = true ]; then
     # In WSL, we might need to start Docker service first
     if ! docker info &> /dev/null; then
-        echo "  - Starting Docker service..."
-        sudo service docker start 2>/dev/null || echo "  - Docker service management may require Docker Desktop"
-        sleep 2
+        echo "  - Docker not responding, attempting to start service..."
+        
+        # Try to start Docker service (works if Docker Engine is installed in WSL)
+        if command -v service &> /dev/null; then
+            sudo service docker start 2>/dev/null && sleep 2
+        fi
+        
+        # Check again
+        if ! docker info &> /dev/null; then
+            echo "  - Note: Docker may require Docker Desktop with WSL integration enabled"
+            echo "  - Or manually start Docker with: sudo service docker start"
+        fi
     fi
 fi
 

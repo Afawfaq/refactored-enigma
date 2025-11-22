@@ -249,7 +249,14 @@ if ($wslNeedsReboot) {
     Write-Host ""
     Write-Host "After restarting:" -ForegroundColor Cyan
     Write-Host "1. Open Ubuntu from the Start menu to complete initial setup" -ForegroundColor White
-    Write-Host "2. Run: cd /mnt/c/Users/$env:USERNAME/path/to/refactored-enigma" -ForegroundColor White
+    
+    # Get current directory for user instructions
+    $currentDir = Get-Location
+    $driveLetter = $currentDir.Drive.Name.ToLower()
+    $pathWithoutDrive = $currentDir.Path.Substring(2) -replace '\\', '/'
+    $wslPath = "/mnt/$driveLetter$pathWithoutDrive"
+    
+    Write-Host "2. Run: cd $wslPath" -ForegroundColor White
     Write-Host "3. Run: bash ubuntu-setup.sh" -ForegroundColor White
     Write-Host "4. This will auto-install all dependencies in WSL Ubuntu" -ForegroundColor White
     Write-Host ""
@@ -273,8 +280,10 @@ if ($wslInstalled) {
             
             # Get current directory in Windows path format
             $currentDir = Get-Location
-            # Convert Windows path to WSL path
-            $wslPath = $currentDir.Path -replace '\\', '/' -replace 'C:', '/mnt/c'
+            # Convert Windows path to WSL path (handle any drive letter)
+            $driveLetter = $currentDir.Drive.Name.ToLower()
+            $pathWithoutDrive = $currentDir.Path.Substring(2) -replace '\\', '/'
+            $wslPath = "/mnt/$driveLetter$pathWithoutDrive"
             
             Write-Host "Executing setup in WSL Ubuntu..." -ForegroundColor Green
             Write-Host "(This will auto-install Docker, Python, git, and all dependencies)" -ForegroundColor Gray
